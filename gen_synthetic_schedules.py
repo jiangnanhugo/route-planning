@@ -27,13 +27,11 @@ def dfs_best_loc_visitings(mdd, root, visit, idx, to_visit, \
     global best_rewards, best_visits
 
     if root == 0:
-        #print('here')
         if cur_reward > best_rewards:
             for i in range(idx):
                 best_visits[i] = visit[i]
             best_rewards = cur_reward
     else:
-        #print('to_visit', to_visit)
         node = mdd.mdd[root]
         for i, ai in enumerate(node.a):
             ni = node.n[i]

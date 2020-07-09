@@ -166,7 +166,7 @@ def train(args):
 
 
 if __name__== "__main__":
-    parser = argparse.ArgumentParser(description="Generative advarsial network based on MDD.")
+    parser = argparse.ArgumentParser(description="Generative advarsial network with MDD.")
 
     parser.add_argument("--data_file", required=True, help='The data file for training (required).')
     parser.add_argument("--prob_file", required=True, help='The scheduling problem instance (required).')

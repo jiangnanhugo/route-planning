@@ -1,4 +1,3 @@
-
 import copy
 import numpy as np
 
@@ -105,6 +104,5 @@ class MDDTSPMask(object):
                 visited[j, maxi[j]] = 1.
                 loc[j, i+1] = maxi[j]
                 time[j, i+1] = time[j, i] + self.distance_matrix[loc[j, i], maxi[j]]
-
 
         return out_mask_all
