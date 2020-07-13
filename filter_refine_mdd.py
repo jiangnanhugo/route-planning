@@ -1,18 +1,17 @@
-#!/usr/bin/python
+import copy
+from itertools import product
+import sys
+from mdd import MDD_TSP
 
-import sys, random, copy, pickle
-import mdd
-import data_utils
 
-
-def floyd(paired_dist):
+def floyd_warshall(paired_dist):
     path = copy.copy(paired_dist)
     n = len(paired_dist)
-    for k in range(n):
-        for i in range(n):
-            for j in range(n):
-                if path[i][j] > path[i][k] + path[k][j]:
-                    path[i][j] = path[i][k] + path[k][j]
+    rn = range(n)
+    for k, i, j in product(rn, repeat=3):
+        path_ik_to_kj = path[i][k] + path[k][j]
+        if path[i][j] > path_ik_to_kj:
+            path[i][j] = path_ik_to_kj
     return path
 
 
@@ -21,6 +20,7 @@ def read_tsp_file_full_matrix(tsp_file):
     mtx = []
     start_reading = False
     lines_read = 0
+    dim = -1
     for l in inp.readlines():
         if l.startswith('DIMENSION'):
             tt = l[:-1].split()
@@ -35,34 +35,39 @@ def read_tsp_file_full_matrix(tsp_file):
     inp.close()
     return mtx
 
-####
 
-tsp_file = "./benchmarks/TSPLIB95/bays29.tsp"
-mdd_file = "output/bays29_s0_e0_md1000_ms10_w100.mdd"
+def main():
+    tsp_file = "./benchmarks/TSPLIB95/bays29.tsp"
+    mdd_file = "output/bays29_s0_e0_md1000_ms10_w100.mdd"
 
-pairwise_dist = read_tsp_file_full_matrix(tsp_file)
+    pairwise_dist = read_tsp_file_full_matrix(tsp_file)
 
-[print(line) for line in pairwise_dist]
+    [print(line) for line in pairwise_dist]
 
-paired_shortest_path = floyd(pairwise_dist)
+    paired_shortest_path = floyd_warshall(pairwise_dist)
 
-startp = 0
-endp = 0
+    startp = 0
+    endp = 0
 
-max_duration = 1000000
-max_stops = 29
-max_width = 100
+    max_duration = 1000000
+    max_stops = 29
+    max_width = 100
 
-##
-# mdd = mdd.MDD_TSP(paired_shortest_path, startp, endp, max_duration, max_stops, max_width)
+    mdd = MDD_TSP(paired_shortest_path, startp, endp, max_duration, max_stops, max_width)
 
-# mdd.filter_refine_preparation()
+    mdd.filter_refine_preparation()
 
-# mdd.print_mdd(sys.stdout)
-# mdd.filter_refine()
+    mdd.print_mdd(sys.stdout)
+    mdd.filter_refine()
 
-# print('===== after filter and refining =====')
-# oup = open(mdd_file, 'w')
-# mdd.print_mdd(oup) # sys.stdout
-# oup.close()
+    print('===== after filter and refining =====')
+    oup = open(mdd_file, 'w')
+    mdd.print_mdd(oup)  # sys.stdout
+    oup.close()
+
+
+if __name__ == '__main__':
+    main()
+
+
 

@@ -1,10 +1,12 @@
 #!/usr/bin/python
 
-import sys, random, copy, pickle, argparse
+import random, copy, pickle, argparse
+from itertools import product
 import numpy as np
 import mdd
 import data_utils
 from filter_refine_mdd import read_tsp_file_full_matrix
+
 
 def random_sample_loc_set(mdd, root, visited, rewards):
     if root == 0:
@@ -22,8 +24,7 @@ def random_sample_loc_set(mdd, root, visited, rewards):
         return ( loc_set | set([node.a[choice]]) ), cur_reward + rewards[len(visited)][node.a[choice]]
 
 
-def dfs_best_loc_visitings(mdd, root, visit, idx, to_visit, \
-                           rewards, cur_reward):
+def dfs_best_loc_visitings(mdd, root, visit, idx, to_visit, rewards, cur_reward):
     global best_rewards, best_visits
 
     if root == 0:
@@ -121,14 +122,16 @@ def bfs_best_loc_greedy_visitings(mdd, to_visit0, rewards, greedy_trial, paired_
     return this_layer[0][3], this_layer[0][4]
 
 
-def floyd(paired_dist):
+def floyd_warshall(paired_dist):
     path = copy.copy(paired_dist)
     n = len(paired_dist)
-    for k in range(n):
-        for i in range(n):
-            for j in range(n):
-                    path[i][j] = min(path[i][j],path[i][k] + path[k][j])
+    rn = range(n)
+    for k, i, j in product(rn, repeat=3):
+        path_ik_to_kj = path[i][k] + path[k][j]
+        if path[i][j] > path_ik_to_kj:
+            path[i][j] = path_ik_to_kj
     return path
+
 ##### Main Program #####
 
 # pair_dist
@@ -151,7 +154,7 @@ parser.add_argument("--max_stops", required=True, help='maximum stops.')
 parser.add_argument("--max_duration", required=True, help='maximum length.')
 
 args = parser.parse_args()
-paired_shortest_path = floyd(pairwise_dist)
+paired_shortest_path = floyd_warshall(pairwise_dist)
 
 startp = 0
 endp = 0
@@ -193,7 +196,7 @@ print('===== after filter and refining =====')
 #mdd.print_mdd(sys.stdout)
 
 #
-print("maximum stops",max_stops)
+print("maximum stops", max_stops)
 print('===== generated data =====')
 
 oup = open(output_file, 'w')
@@ -202,7 +205,6 @@ num_rejected = 0
 while num_complete < num_examples:
     loc_set, sample_reward = random_sample_loc_set(mdd, mdd.root, set([]), rewards)
     if len(loc_set) > 1:
-
         best_visits, best_rewards = bfs_best_loc_greedy_visitings(mdd, loc_set, rewards, greedy_trial,
                                                                   paired_shortest_path, max_duration)
 

@@ -16,8 +16,7 @@ class MDDTSPMask(object):
         self.endp = self.mdd.endp
 
 
-        ### state_next
-        ### state_mask
+        ### state_next, state_mask
         self.state_next = np.zeros((self.n_states, self.n_locs), dtype=np.int)
         self.state_mask = np.zeros((self.n_states, self.n_locs), dtype=np.float)
 
@@ -48,11 +47,11 @@ class MDDTSPMask(object):
         state[:, 0] = self.mdd.root
 
         # loc
-        loc=np.zeros((n_batch, self.max_stops + 2), dtype=np.int32)
+        loc = np.zeros((n_batch, self.max_stops + 2), dtype=np.int32)
         loc[:, 0] = self.startp
 
         # time
-        time=np.zeros((n_batch, self.max_stops + 2))
+        time = np.zeros((n_batch, self.max_stops + 2))
         time[:, 0] = 0.
 
         # visited
@@ -74,8 +73,7 @@ class MDDTSPMask(object):
             for j in range(n_batch):
                 for a in range(self.n_locs):
                     if out_mask0[j,a] > 0:
-
-                        # time filter
+                        # max_duration filter
                         if time[j,i] + self.distance_matrix[loc[j, i], a] + self.state_latest_time[state[j, i], a] > self.max_duration:
                             out_mask[j,a] = 0.
 
@@ -86,9 +84,10 @@ class MDDTSPMask(object):
                                 out_mask[j, a] = 0.
                                 break
 
-            out_mask_all[i,:,:] = out_mask
+            out_mask_all[i, :, :] = out_mask
 
             current_out = np.multiply(seq_out[i], out_mask) - 1.0 + out_mask
+            print(i,current_out)
             #current_out=seq_out[i].masked_fill(out_mask == 0, -np.inf)
 
             maxi = np.argmax(current_out, axis=1)

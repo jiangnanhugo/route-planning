@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class ScheduleProb(object):
     def __init__(self):
         self.initialized = False
@@ -23,14 +24,11 @@ class ScheduleProb(object):
         print('[schedule ins] rewards', self.rewards, file=oup)
         print('[schedule ins] num_locs', self.num_locs, file=oup)
 
-
     def norm_reward(self, syn, real):
         total_reward = 0.
         for si, ri in zip(syn, real):
-            si_reward = self.reward(si)
-            ri_reward = self.reward(ri)
-            total_reward += si_reward*1.0/ri_reward
-        return total_reward/ len(syn)
+            total_reward += self.reward(si) * 1.0 / self.reward(ri)
+        return total_reward / len(syn)
 
     def reward(self, oup):
         reward = 0.
@@ -106,6 +104,7 @@ class ScheduleProb(object):
 
         return num_valid
 
+
 class ScheduleDataGen:
     def __init__(self, data_file, max_stop, num_locs):
         self.data = []
@@ -130,7 +129,6 @@ class ScheduleDataGen:
         self.it = 0
         # NOTICE: No need to randomize the data, the data is already randomized!
 
-
     def next_data(self, batchnum):
         data = np.zeros((self.max_stop, batchnum, self.num_locs))
         visit = np.zeros((batchnum, self.num_locs))
@@ -153,17 +151,4 @@ class ScheduleDataGen:
         return data, visit
 
 
-def score_to_routes(score):
-    max_stops, nbatch, nlocs = score.shape
-    a = np.zeros((nbatch, max_stops), dtype=np.int)
-    for i in range(max_stops):
-        for j in range(nbatch):
-            maxk = score[i,j,0]
-            maxkt = 0
-            for k in range(nlocs):
-                if score[i,j,k] > maxk:
-                    maxk = score[i,j,k]
-                    maxkt = k
-            a[j,i] = maxkt
-    return a
 

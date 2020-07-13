@@ -2,11 +2,20 @@ from hashlib import blake2b
 import copy
 
 
+# total travel distance
+# exact
+# relaxed. fig1.
+# for node u4 the earlist time is: the shortest distance.
+# for node u4 the latest time is: the longest distance.
+# if all the path from t to u4 pass l2. then l2 will be removed for all the out
+
+# some constraints can be ignored. only need to proof of our concept.
+
 def is_same(a, b):
     if len(a) != len(b):
         return False
     else:
-        for i,j in zip(a, b):
+        for i, j in zip(a, b):
             if i != j:
                 return False
         return True
@@ -14,16 +23,20 @@ def is_same(a, b):
 
 class MDDNode:
     def __init__(self, _a=[], _n=[]):
+        """
+
+        :param _a: incoming arcs. previous arc
+        :param _n: outgoing arcs. next arc
+        :param count: the number of incoming arcs. If count=0, means this node have no incoming arc.
+        """
         self.a = copy.copy(_a)
         self.n = copy.copy(_n)
-
+        # from source node to current node
         self.earliest_time = []
+        # from sink node to current node
         self.latest_time = []
 
-        self.all_up = set([])
-        self.some_up = set([])
-        self.all_down = set([])
-        self.some_down = set([])
+        self.all_up, self.some_up, self.all_down, self.some_down = set(), set(), set(), set()
 
         self.count = 0
 
@@ -34,7 +47,7 @@ class MDDNode:
 class MDDHash:
     def __init__(self, mdd, _hashsize=1000003):
         self.hashsize = _hashsize
-        self.h = [[] for i in range(self.hashsize)]
+        self.h = [[],] * self.hashsize
         self.mdd = mdd
 
     def encode(self, a, n):
@@ -61,12 +74,21 @@ class MDDHash:
         idx = self.encode(a, n)
         self.h[idx].append(mdd_idx)
 
-    def delete(self, h_idx, h_it, mdd_idx):
+    def delete(self, h_idx, h_it):
         return self.h[h_idx].pop([h_it])
 
 
 class MDD_TSP(object):
     def __init__(self, distance_matrix, startp, endp, max_duration, max_stops, max_width):
+        """
+
+        :param distance_matrix:
+        :param startp: start position
+        :param endp: end position
+        :param max_duration:
+        :param max_stops:
+        :param max_width:
+        """
         self.distance_matrix = distance_matrix
         self.startp = startp
         self.endp = endp
@@ -129,6 +151,7 @@ class MDD_TSP(object):
         for k in range(len(self.layers)):
             self.earliest_time_by_layer(k)
 
+    # earliest_time -> shortest distance
     def earliest_time_by_layer(self, k):
         if k == 0:
             node_id = self.layers[k][0]
@@ -139,15 +162,16 @@ class MDD_TSP(object):
             assert len(self.mdd[node_id].earliest_time) == len(self.mdd[node_id].a)
 
         for node_id in self.layers[k]:
+            # init the earliest_time by INT_MAX value.
             self.mdd[node_id].earliest_time = [float(0x7fffffff) for i in self.mdd[node_id].a]
 
         for node_id in self.layers[k-1]:
             node = self.mdd[node_id]
             for i0, a0 in enumerate(node.a):
-                node_id1 = node.n[i0]
-                node_next = self.mdd[node_id1]
+                node_next = self.mdd[ node.n[i0] ]
                 earliest_node = node.earliest_time[i0]
                 for i1, a1 in enumerate(node_next.a):
+                    # distance from node s to i1
                     node_next.earliest_time[i1] = min(earliest_node + self.distance_matrix[a0][a1],
                                                       node_next.earliest_time[i1])
 
@@ -176,14 +200,13 @@ class MDD_TSP(object):
         for node_id in self.layers[k]:
             node = self.mdd[node_id]
             for i0, a0 in enumerate(node.a):
-                node_id1 = node.n[i0]
-                node_next = self.mdd[node_id1]
+                node_next = self.mdd[ node.n[i0] ]
                 for i1, a1 in enumerate(node_next.a):
+                    # distance from i0 to sink t
                     node.latest_time[i0] = min(node_next.latest_time[i1] + self.distance_matrix[a0][a1],
                                                node.latest_time[i0])
 
     def all_up_by_layer(self, k):
-        # print('k=', k)
         if k == len(self.layers) - 1:
             node_id = self.layers[k][0]
             self.mdd[node_id].all_up = set([])
@@ -208,9 +231,7 @@ class MDD_TSP(object):
         for k in range(len(self.layers) - 2, -1, -1):
             self.all_up_by_layer(k)
 
-
     def some_up_by_layer(self, k):
-        # print('k=', k)
         if k == len(self.layers) - 1:
             node_id = self.layers[k][0]
             self.mdd[node_id].some_up = set([])
@@ -225,7 +246,6 @@ class MDD_TSP(object):
             for a, n in zip(node.a, node.n):
                 node_next = self.mdd[n]
                 node.some_up |= node_next.some_up | set([a])
-
 
     def some_up(self):
         for k in range(len(self.layers) - 2, -1, -1):
@@ -256,7 +276,6 @@ class MDD_TSP(object):
                 else:
                     node_next.all_down &= (node.all_down | set([a]))
 
-
     def some_down_by_layer(self, k):
         if k == 0:
             node_id = self.layers[k][0]
@@ -273,11 +292,9 @@ class MDD_TSP(object):
                 node_next = self.mdd[n]
                 node_next.some_down |= (node.some_down | set([a]))
 
-
     def some_down(self):
         for k in range(len(self.layers)):
             self.some_down_by_layer(k)
-
 
     def delete_empty_nodes_by_layer(self, k):
         check_previous_layer = False
@@ -306,9 +323,13 @@ class MDD_TSP(object):
         if check_previous_layer and k > 0:
             self.delete_empty_nodes_by_layer(k-1)
 
+    # can affect all_up, some_up, all_down, some_down
     def filter_by_layer(self, k):
-        # can affect all_up, some_up, all_down, some_down
+        """ arc filtering
 
+        :param k:
+        :return:
+        """
         delete_layer_check = False
         for node_id in self.layers[k]:
             node = self.mdd[node_id]
@@ -316,8 +337,7 @@ class MDD_TSP(object):
             i = 0
             while i < len(node.a):
                 node_next = self.mdd[node.n[i]]
-                if (node.earliest_time[i] + node.latest_time[i] > \
-                   self.max_duration):
+                if node.earliest_time[i] + node.latest_time[i] > self.max_duration:
                     delete_layer_check = True
                     node_next.count -= 1
                     del node.a[i]
@@ -330,6 +350,12 @@ class MDD_TSP(object):
                      (node.a[i] in node_next.all_up) or \
                      (k == len(node.some_down) and node.a[i] in node.some_down) or \
                      (k == len(node_next.some_up) and node.a[i] in node_next.some_up):
+                    """
+                    all_down: the set of locations that every path from the root node s to the current node v passes.
+                    some_down: the set of locations that at least one path from the root node r to the current node v passes.
+                    all_up: the set of locations that every path from the current node v to the sink node t passes.
+                    some_down: the set of locations that at least one path from the current node v to the current v passes. 
+                    """
                     delete_layer_check = True
                     node_next.count -= 1
                     del node.a[i]
@@ -343,6 +369,11 @@ class MDD_TSP(object):
             self.delete_empty_nodes_by_layer(k)
 
     def refine_by_layer(self, k):
+        """ node splitting
+
+        :param k:
+        :return:
+        """
         while len(self.layers[k]) < self.max_width:
             # find a node that can be splitted
             split_node_found = False
@@ -418,7 +449,6 @@ class MDD_TSP(object):
                 else:
                     idx += 1
 
-
     def filter_refine(self):
         for k in range(0, len(self.layers) - 2):
             # delete all the nodes from layer k
@@ -437,6 +467,8 @@ class MDD_TSP(object):
         self.remove_from_layer_zero_count()
 
     def filter_refine_preparation(self):
+        """ relax CRISP module
+        """
         self.earliest_time()
         self.latest_time()
 
@@ -450,7 +482,6 @@ class MDD_TSP(object):
         self.mdd[0].n.append(0)
         self.mdd[0].some_up.add(self.endp)
         self.mdd[0].all_up.add(self.endp)
-
 
     def print_mdd(self, oup):
         # oup = open(out_file, 'w')
