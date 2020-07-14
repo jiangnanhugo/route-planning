@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 import pickle, argparse
 import math
-import mdd_gen
+import CRISP_TSP_MASK
 from generative_adversarial_network import discriminator, generator
 
 import data_utils
@@ -19,20 +19,6 @@ def mask_fill_inf(matrix, mask):
     num = 3.4 * math.pow(10, 38)
     return (matrix * mask) + (-((negmask * num + num) - num))
 
-def score_to_routes(score):
-    max_stops, nbatch, nlocs = score.shape
-    routes = np.zeros((nbatch, max_stops), dtype=np.int)
-    for i in range(max_stops):
-        for j in range(nbatch):
-            max_score = score[i, j, 0]
-            max_location = 0
-            for k in range(nlocs):
-                if score[i, j, k] > max_score:
-                    max_score = score[i, j, k]
-                    max_location = k
-            routes[j, i] = max_location
-    return routes
-
 
 def test(data_gen, testing_set_size, g_n_input, cuda, crisp, use_mask, gnt):
     real_routes=[]
@@ -40,7 +26,7 @@ def test(data_gen, testing_set_size, g_n_input, cuda, crisp, use_mask, gnt):
     num_valid_routes=0
     norm_reward=0.0
     for i in range(testing_set_size):
-        vars_real, visit = data_gen.next_data(1)
+        _, visit, real_paths = data_gen.next_data(1)
         visit_z0 = torch.Tensor(visit).float()
         visit_z = visit_z0.repeat(prob.max_stops + 1, 1, 1)
 
@@ -50,27 +36,17 @@ def test(data_gen, testing_set_size, g_n_input, cuda, crisp, use_mask, gnt):
         if cuda:
             z = z.cuda()
         out = gnt(z)
-
+        vars_predict = F.softmax(out, dim=2)
         if use_mask:
-            out_mask = crisp.generate_mask(out.detach().numpy(), visit_z0)
-            out_mask = torch.from_numpy(out_mask)
-            out = mask_fill_inf(out, out_mask)
+            predicted_route = crisp.generate_route_with_inference(vars_predict.detach().numpy(), visit_z0)
         else:
             if cuda:
                 visit_z = visit_z.cuda()
             out = mask_fill_inf(out, visit_z)
+        real_route=real_paths.transpose()
+        num_valid_routes += prob.valid_routes([predicted_route], visit)
 
-        result = F.softmax(out, dim=2)
-        result[torch.isnan(result)] = 0
-        vars_synt = result
-        if cuda:
-            real_route = score_to_routes(vars_real)
-            predicted_route = score_to_routes(vars_synt.detach().cpu().numpy())
-        else:
-            real_route = score_to_routes(vars_real)
-            predicted_route = score_to_routes(vars_synt.detach().numpy())
-        num_valid_routes += prob.valid_routes(predicted_route, visit)
-        norm_reward += prob.norm_reward(predicted_route, real_route)
+        norm_reward += prob.norm_reward([predicted_route], real_route)
         real_routes.append(real_route)
         predicted_routes.append(predicted_route)
 
@@ -84,9 +60,9 @@ def build_crisp(prob, max_width):
     # build mdd
     mdd0 = mdd.MDD_TSP(prob.paired_dist, prob.startp, prob.endp, prob.max_duration, prob.max_stops, max_width)
     mdd0.filter_refine_preparation()
-    mdd0.filter_refine()
+    mdd0.relax_mdd()
     mdd0.add_last_node_forever()
-    crisp = mdd_gen.MDDTSPMask(mdd0)
+    crisp = CRISP_TSP_MASK.CRISP_TSP_MASK(mdd0)
     return crisp
 
 
@@ -112,19 +88,15 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
     if cuda:
         d_label = d_label.cuda()
 
-    d_label_1s = torch.ones(testing_set_size)
-    d_label_0s = torch.zeros(testing_set_size)
-    d_label_summary = torch.cat((d_label_1s, d_label_0s), 0)
-    if cuda:
-        d_label_summary = d_label_summary.cuda()
-
     d_optim = torch.optim.Adam(dmt.parameters(), lr=lr)
     g_optim = torch.optim.Adam(gnt.parameters(), lr=g_lr)
 
     for epoch in range(1, 50):
         print("[ {} iterations]".format(epoch))
-        for it in range(10):
-            vars_real, visit = data_gen.next_data(train_batch_size)
+        for it in range(100):
+            vars_real, visit, real_paths = data_gen.next_data(train_batch_size)
+            # print("real path: {}".format(vars_real))
+            # print("paths={}".format(real_paths))
             vars_real = torch.Tensor(vars_real).float()
             visit_z0 = torch.Tensor(visit).float()
             if cuda:
@@ -138,19 +110,30 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
                 z = z.cuda()
 
             out = gnt(z)
+            vars_predict = F.softmax(out, dim=2)
+            # print("before mask: {}".format(vars_predict))
             if use_crisp:
-                out_mask = crisp.generate_mask(out.detach().numpy(), visit_z0)
+                # out_mask = crisp.generate_mask(out.detach().numpy(), visit_z0)
+                out_mask=crisp.generate_mask_with_ground_truth(real_paths, visit_z0)
                 # print("out:\n{}".format(out.detach().numpy()[:,1:]))
-                print("visit_z0:\n{}".format(visit_z0[1,:]))
-                print("mask:\n{}".format(out_mask[:, 1, :]))
-                print("real:\n{}".format(vars_real[:, 1, :]))
+                # print("visit_z0:\n{}".format(visit_z0[1,:]))
+                # print("mask:\n{}".format(out_mask[:, 1, :]))
+                # print("real:\n{}".format(vars_real[:, 1, :]))
 
                 out_mask = torch.from_numpy(out_mask)
-                out = torch.mul(out, out_mask) - 1.0 + out_mask
-            else:
-                out = mask_fill_inf(out, visit_z)
+                # mask
+                vars_predict = torch.mul(vars_predict, out_mask)
+                # print("after mask {}".format(vars_predict))
+                # renormalize
+                # print("sum={}".format(torch.sum(vars_predict, dim=2, keepdim=True)))
+                normalized_vars_predict=vars_predict/torch.sum(vars_predict, dim=2,keepdim=True)
+                normalized_vars_predict[torch.isnan(normalized_vars_predict)] = 0.0
+                # print("after normalize {}".format(normalized_vars_predict))
+                # print("vars real={}".format(vars_real))
 
-            vars_predict = F.softmax(out, dim=2)
+            else:
+                vars_predict = mask_fill_inf(vars_predict, visit_z)
+
             d_inp = torch.cat((vars_real, vars_predict.detach()), 1)
             d_output = dmt(d_inp)
             d_output = torch.squeeze(d_output)
@@ -181,7 +164,7 @@ def str2bool(v):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generative advarsial network with MDD.")
+    parser = argparse.ArgumentParser(description="Generative adversarial network with MDD.")
 
     parser.add_argument("--data_file", required=True, help='The data file for training (required).')
     parser.add_argument("--prob_file", required=True, help='The scheduling problem instance (required).')

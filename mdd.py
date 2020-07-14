@@ -324,7 +324,7 @@ class MDD_TSP(object):
             self.delete_empty_nodes_by_layer(k-1)
 
     # can affect all_up, some_up, all_down, some_down
-    def filter_by_layer(self, k):
+    def arc_filtering_by_layer(self, k):
         """ arc filtering
 
         :param k:
@@ -368,10 +368,10 @@ class MDD_TSP(object):
         if delete_layer_check:
             self.delete_empty_nodes_by_layer(k)
 
-    def refine_by_layer(self, k):
+    def node_splitting_by_layer(self, k):
         """ node splitting
 
-        :param k:
+        :param k: the k-th layer
         :return:
         """
         while len(self.layers[k]) < self.max_width:
@@ -449,18 +449,18 @@ class MDD_TSP(object):
                 else:
                     idx += 1
 
-    def filter_refine(self):
+    def relax_mdd(self):
         for k in range(0, len(self.layers) - 2):
             # delete all the nodes from layer k
 
-            self.filter_by_layer(k)
+            self.arc_filtering_by_layer(k)
 
             self.all_down_by_layer(k+1)
             self.some_down_by_layer(k+1)
             self.all_up_by_layer(k)
             self.some_up_by_layer(k)
 
-            self.refine_by_layer(k+1)
+            self.node_splitting_by_layer(k + 1)
 
             self.earliest_time_by_layer(k+1)
 

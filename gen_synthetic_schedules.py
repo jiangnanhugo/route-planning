@@ -190,7 +190,7 @@ mdd = mdd.MDD_TSP(paired_shortest_path, startp, endp, max_duration, max_stops, m
 mdd.filter_refine_preparation()
 
 # mdd.print_mdd(sys.stdout)
-mdd.filter_refine()
+mdd.relax_mdd()
 
 print('===== after filter and refining =====')
 #mdd.print_mdd(sys.stdout)

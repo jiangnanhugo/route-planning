@@ -58,7 +58,7 @@ def main():
     mdd.filter_refine_preparation()
 
     mdd.print_mdd(sys.stdout)
-    mdd.filter_refine()
+    mdd.relax_mdd()
 
     print('===== after filter and refining =====')
     oup = open(mdd_file, 'w')

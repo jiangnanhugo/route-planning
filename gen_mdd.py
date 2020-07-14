@@ -20,9 +20,7 @@ def main():
                        max_width)
 
     mdd0.filter_refine_preparation()
-
-    mdd0.filter_refine()
-
+    mdd0.relax_mdd()
     mdd0.add_last_node_forever()
 
     # print mdd

@@ -129,26 +129,35 @@ class ScheduleDataGen:
         self.it = 0
         # NOTICE: No need to randomize the data, the data is already randomized!
 
-    def next_data(self, batchnum):
-        data = np.zeros((self.max_stop, batchnum, self.num_locs))
-        visit = np.zeros((batchnum, self.num_locs))
+    def next_data(self, batch_size):
+        """
 
-        for i in range(batchnum):
+        :param batch_size: batch size
+        :return:
+        """
+        data = np.zeros((self.max_stop, batch_size, self.num_locs))
+        visit = np.zeros((batch_size, self.num_locs))
+        paths=np.zeros((self.max_stop, batch_size), dtype=np.int)
+        for i in range(batch_size):
             it = (self.it + i) % self.num_data
             j = 0
             while j < len(self.data[it]):
                 loc = self.data[it][j]
                 visit[i, loc] = 1.0
                 data[j, i, loc] = 1.0
+                paths[j, i] = loc
                 j += 1
+
             while j < self.max_stop:
                 data[j, i, loc] = 1.0
+                paths[j, i] = loc
                 j += 1
 
-        self.it += batchnum
+
+        self.it += batch_size
         self.it %= self.num_data
 
-        return data, visit
+        return data, visit, paths
 
 
 
