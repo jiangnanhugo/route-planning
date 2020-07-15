@@ -42,18 +42,18 @@ def test(data_gen, testing_set_size, g_n_input, cuda, crisp, use_mask, gnt):
         else:
             if cuda:
                 visit_z = visit_z.cuda()
-            out = mask_fill_inf(out, visit_z)
+            predicted_route = mask_fill_inf(out, visit_z)
         real_route=real_paths.transpose()
         num_valid_routes += prob.valid_routes([predicted_route], visit)
 
         norm_reward += prob.norm_reward([predicted_route], real_route)
-        real_routes.append(real_route)
+        real_routes.append(list(real_route.squeeze()))
         predicted_routes.append(predicted_route)
 
-    print('real= {}'.format(real_routes[:10]))
+    print('real={}'.format(real_routes[:10]))
     print('gen={}'.format(predicted_routes[:10]))
-    print('valid: gen={}'.format(num_valid_routes * 1.0 /testing_set_size))
-    print('reward: norm={}'.format(norm_reward))
+    print('valid routes={}'.format(num_valid_routes[0] * 1.0 /testing_set_size))
+    print('norm-reward={}'.format(norm_reward * 1.0 /testing_set_size))
 
 
 def build_crisp(prob, max_width):
@@ -95,8 +95,6 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
         print("[ {} iterations]".format(epoch))
         for it in range(100):
             vars_real, visit, real_paths = data_gen.next_data(train_batch_size)
-            # print("real path: {}".format(vars_real))
-            # print("paths={}".format(real_paths))
             vars_real = torch.Tensor(vars_real).float()
             visit_z0 = torch.Tensor(visit).float()
             if cuda:
@@ -111,29 +109,20 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
 
             out = gnt(z)
             vars_predict = F.softmax(out, dim=2)
-            # print("before mask: {}".format(vars_predict))
             if use_crisp:
-                # out_mask = crisp.generate_mask(out.detach().numpy(), visit_z0)
                 out_mask=crisp.generate_mask_with_ground_truth(real_paths, visit_z0)
-                # print("out:\n{}".format(out.detach().numpy()[:,1:]))
-                # print("visit_z0:\n{}".format(visit_z0[1,:]))
-                # print("mask:\n{}".format(out_mask[:, 1, :]))
-                # print("real:\n{}".format(vars_real[:, 1, :]))
 
                 out_mask = torch.from_numpy(out_mask)
                 # mask
                 vars_predict = torch.mul(vars_predict, out_mask)
-                # print("after mask {}".format(vars_predict))
                 # renormalize
-                # print("sum={}".format(torch.sum(vars_predict, dim=2, keepdim=True)))
-                normalized_vars_predict=vars_predict/torch.sum(vars_predict, dim=2,keepdim=True)
+                normalized_vars_predict=vars_predict/torch.sum(vars_predict, dim=2, keepdim=True)
                 normalized_vars_predict[torch.isnan(normalized_vars_predict)] = 0.0
-                # print("after normalize {}".format(normalized_vars_predict))
-                # print("vars real={}".format(vars_real))
 
             else:
                 vars_predict = mask_fill_inf(vars_predict, visit_z)
 
+            # feed the correct route and the predicted route into the discriminator.
             d_inp = torch.cat((vars_real, vars_predict.detach()), 1)
             d_output = dmt(d_inp)
             d_output = torch.squeeze(d_output)

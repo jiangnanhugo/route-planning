@@ -43,12 +43,12 @@ python gan_bdd.py --data_file $data_file --prob_file $prob_file --batchnum $batc
 # use_mask=0
 
 # echo "$prob_file mask=$use_mask"
-# python gan_bdd.py --data_file $data_file --prob_file $prob_file --batchnum $batchnum --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input --lr $lr --glr $glr --cuda $cuda --mask $use_mask > $data_file.mask${use_mask}.out
+# python gan_with_crisp.py --data_file $data_file --prob_file $prob_file --batchnum $batchnum --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input --lr $lr --glr $glr --cuda $cuda --mask $use_mask > $data_file.mask${use_mask}.out
 
 # use_mask=1
 
 # echo "$prob_file mask=$use_mask"
-# python gan_bdd.py --data_file $data_file --prob_file $prob_file --batchnum $batchnum --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input --lr $lr --glr $glr --cuda $cuda --mask $use_mask > $data_file.mask${use_mask}.out
+# python gan_with_crisp.py --data_file $data_file --prob_file $prob_file --batchnum $batchnum --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input --lr $lr --glr $glr --cuda $cuda --mask $use_mask > $data_file.mask${use_mask}.out
 
 
 # #2
@@ -58,11 +58,11 @@ python gan_bdd.py --data_file $data_file --prob_file $prob_file --batchnum $batc
 # use_mask=0
 
 # echo "$prob_file mask=$use_mask"
-# python gan_bdd.py --data_file $data_file --prob_file $prob_file --batchnum $batchnum --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input --lr $lr --glr $glr --cuda $cuda --mask $use_mask > $data_file.mask${use_mask}.new.out
+# python gan_with_crisp.py --data_file $data_file --prob_file $prob_file --batchnum $batchnum --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input --lr $lr --glr $glr --cuda $cuda --mask $use_mask > $data_file.mask${use_mask}.new.out
 
 # use_mask=1
 
 # echo "$prob_file mask=$use_mask"
-# python gan_bdd.py --data_file $data_file --prob_file $prob_file --batchnum $batchnum --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input --lr $lr --glr $glr --cuda $cuda --mask $use_mask > $data_file.mask${use_mask}.new.out
+# python gan_with_crisp.py --data_file $data_file --prob_file $prob_file --batchnum $batchnum --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input --lr $lr --glr $glr --cuda $cuda --mask $use_mask > $data_file.mask${use_mask}.new.out
 
 echo "complete!"
