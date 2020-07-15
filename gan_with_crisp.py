@@ -116,11 +116,8 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
                 # mask
                 vars_predict = torch.mul(vars_predict, out_mask)
                 # renormalize
-                normalized_vars_predict=vars_predict/torch.sum(vars_predict, dim=2, keepdim=True)
-                normalized_vars_predict[torch.isnan(normalized_vars_predict)] = 0.0
-
-            else:
-                vars_predict = mask_fill_inf(vars_predict, visit_z)
+                vars_predict=vars_predict/torch.sum(vars_predict, dim=2, keepdim=True)
+                vars_predict[torch.isnan(vars_predict)] = 0.0
 
             # feed the correct route and the predicted route into the discriminator.
             d_inp = torch.cat((vars_real, vars_predict.detach()), 1)
