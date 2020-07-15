@@ -42,7 +42,7 @@ def test(data_gen, testing_set_size, g_n_input, cuda, crisp, use_mask, gnt):
         else:
             if cuda:
                 visit_z = visit_z.cuda()
-            predicted_route = mask_fill_inf(out, visit_z)
+            # predicted_route = mask_fill_inf(out, visit_z)
         real_route=real_paths.transpose()
         num_valid_routes += prob.valid_routes([predicted_route], visit)
 
@@ -114,13 +114,17 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
 
                 out_mask = torch.from_numpy(out_mask)
                 # mask
+                # print("out mask:",out_mask)
                 vars_predict = torch.mul(vars_predict, out_mask)
+                # print("after masking:",vars_predict)
                 # renormalize
-                vars_predict=vars_predict/torch.sum(vars_predict, dim=2, keepdim=True)
-                vars_predict[torch.isnan(vars_predict)] = 0.0
-
+                norm_vars_predict=vars_predict/torch.sum(vars_predict, dim=2, keepdim=True)
+                # print("after noralization:",norm_vars_predict)
+                norm_vars_predict[torch.isnan(norm_vars_predict)] = 0.0
+            else:
+                norm_vars_predict = vars_predict
             # feed the correct route and the predicted route into the discriminator.
-            d_inp = torch.cat((vars_real, vars_predict.detach()), 1)
+            d_inp = torch.cat((vars_real, norm_vars_predict.detach()), 1)
             d_output = dmt(d_inp)
             d_output = torch.squeeze(d_output)
             d_loss = F.binary_cross_entropy(d_output, d_label)

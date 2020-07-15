@@ -23,4 +23,4 @@ prob_file=$folder/bays29_s0_e0_md1000_ms"$loc"_random_reward.prob
 echo "$prob_file use_crisp=$use_crisp"
 python3 gan_with_crisp.py --data_file $data_file --prob_file $prob_file --max_width $max_width --batchnum $batchnum \
 --batchnum_summary $batchnum_summary  --d_n_hidden $d_n_hidden --g_n_hidden $g_n_hidden --g_n_input $g_n_input \
---lr $lr --glr $glr --cuda $cuda --use_crisp $use_crisp > $data_file.crisp${use_crisp}.out
+--lr $lr --glr $glr --cuda $cuda --use_crisp $use_crisp #> $data_file.crisp${use_crisp}.out

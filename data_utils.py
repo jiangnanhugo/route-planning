@@ -105,7 +105,7 @@ class ScheduleProb(object):
         return num_valid
 
 
-class ScheduleDataGen:
+class ScheduleDataGen(object):
     def __init__(self, data_file, max_stop, num_locs):
         self.data = []
         self.rewards = []

@@ -174,6 +174,7 @@ output_file = "dataset/"+str(max_stops)+"locations/bays29_s0_e0_md1000_ms"+str(m
 num_locs = len(paired_shortest_path)
 print("paired_shortest_path={}".format(num_locs))
 
+
 def gen_random_rewards(max_stops, num_locs):
     return np.random.rand(max_stops, num_locs)
 rewards = gen_random_rewards(max_stops + 1, num_locs)
