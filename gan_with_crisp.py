@@ -13,12 +13,13 @@ import numpy as np
 np.printoptions(precision=3, suppress=True)
 
 
-
-def mask_fill_inf(matrix, mask):
-    negmask = 1 - mask
-    num = 3.4 * math.pow(10, 38)
-    return (matrix * mask) + (-((negmask * num + num) - num))
-
+def score_to_routes(score):
+    max_stops, nlocs = score.shape
+    predict_routes=[]
+    for i in range(max_stops):
+        loc=np.argmax(score[i,:])
+        predict_routes.append(loc)
+    return predict_routes
 
 def test(data_gen, testing_set_size, g_n_input, cuda, crisp, use_mask, gnt):
     real_routes=[]
@@ -40,9 +41,7 @@ def test(data_gen, testing_set_size, g_n_input, cuda, crisp, use_mask, gnt):
         if use_mask:
             predicted_route = crisp.generate_route_with_inference(vars_predict.detach().numpy(), visit_z0)
         else:
-            if cuda:
-                visit_z = visit_z.cuda()
-            # predicted_route = mask_fill_inf(out, visit_z)
+            predicted_route = score_to_routes(vars_predict.detach().numpy().squeeze())
         real_route=real_paths.transpose()
         num_valid_routes += prob.valid_routes([predicted_route], visit)
 
@@ -111,7 +110,6 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
             vars_predict = F.softmax(out, dim=2)
             if use_crisp:
                 out_mask=crisp.generate_mask_with_ground_truth(real_paths, visit_z0)
-
                 out_mask = torch.from_numpy(out_mask)
                 # mask
                 # print("out mask:",out_mask)

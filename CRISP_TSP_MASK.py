@@ -170,6 +170,29 @@ class CRISP_TSP_MASK(object):
 
         return generated_routes
 
+    def generate_route_with_no_crisp(self, seq_out, visit):
+        max_stop_seq_out, n_batch, n_locs = seq_out.shape
+        seq_out = seq_out.squeeze()
+        assert max_stop_seq_out == self.max_stops + 1
+        assert n_locs == self.n_locs
+
+
+        # time
+        time = np.zeros(self.max_stops + 2)
+        time[0] = 0.
+        # to visit
+        to_visit = copy.deepcopy(visit).detach().numpy().flatten()
+
+        generated_routes = []
+        for i in range(self.max_stops + 1):
+
+            current_out = np.multiply(seq_out[i,:], to_visit)
+            normalized_vars_predict = current_out / np.sum(current_out, keepdims=True)
+            normalized_vars_predict[np.isnan(normalized_vars_predict)] = 0.0
+            sampled_loc=random_sample_with_majority_voting(normalized_vars_predict)
+            generated_routes.append(sampled_loc)
+        return generated_routes
+
 
 def convert_prob_to_range(probs):
     sumed=0.
