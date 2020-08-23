@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import random, copy, pickle, argparse
 from itertools import product
 import numpy as np
