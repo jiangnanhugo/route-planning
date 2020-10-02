@@ -48,10 +48,10 @@ class MDDNode(object):
         return self.__eq__(other) or not self.__lt__(other)
 
     def __str__(self):
-        return 'MDDNode(' + str(self.layer) + ',' + str(self.state) + ')'
+        return 'Node(' + str(self.layer) + ', ' + str(self.state) + ')'
 
     def __repr__(self):
-        return 'MDDNode(' + repr(self.layer) + ', ' + repr(self.state) + ')'
+        return 'Node(' + repr(self.layer) + ', ' + repr(self.state) + ')'
 
 
 class MDDNodeInfo(object):

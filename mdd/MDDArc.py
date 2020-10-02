@@ -52,7 +52,7 @@ class MDDArc(object):
         return self.__eq__(other) or not self.__lt__(other)
 
     def __str__(self):
-        return 'MDDArc(' + str(self.label) + ':' + str(self.tail) + ',' + str(self.head) + ')'
+        return 'Arc(' + str(self.label) + ': ' + str(self.tail) + ', ' + str(self.head) + ')'
 
     def __repr__(self):
-        return 'MDDArc(' + repr(self.label) + ', ' + repr(self.tail) + ', ' + repr(self.head) + ')'
+        return 'Arc(' + repr(self.label) + ', ' + repr(self.tail) + ', ' + repr(self.head) + ')'

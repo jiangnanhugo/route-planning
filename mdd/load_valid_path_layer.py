@@ -1,4 +1,4 @@
-from mdd import MDD
+from mdd import MDD, mdd_filtering
 import random
 
 
@@ -132,9 +132,9 @@ def build_full_tsp(n_locations):
     # middle layer
     for layer in range(n_locations):
         if layer == n_locations-1:
-            new_node = Node(layer + 1, "u_" + str(uid), "layer_"+str(layer), "t")
+            new_node = Node(layer + 1, "u" + str(uid), "layer_"+str(layer), "t")
         else:
-            new_node = Node(layer + 1, "u_" + str(uid), "layer_"+str(layer), "layer_"+str(layer+1))
+            new_node = Node(layer + 1, "u" + str(uid), "layer_"+str(layer), "layer_"+str(layer+1))
         node_list.append(new_node)
         uid += 1
     node_list.append(sink)
@@ -149,9 +149,9 @@ def build_full_tsp(n_locations):
         arc_list.append(temp_list)
 
     for node in node_list[1:-1]:                                               # type 2 arc
-        arc_list.append([Arc(node.id, node_list[-1].id, "t")])
+        arc_list.append([Arc(node_list[-1].id, node.id, 0)])
 
-    init=[]
+    init = []
     for x in node_list:
         init.append(x.get_string())
 
@@ -168,8 +168,12 @@ def get_mdd(n_locations, maxwidth=0):
     json_content = build_full_tsp(n_locations)
     mymdd.loadJSON(json_content)
     mymdd.relax_mdd(maxwidth)
+    # print(mymdd.__str__(showLong=True))
+    mdd_filtering(mymdd, [1, 2])
+    print(mymdd.__str__(showLong=True))
     return mymdd
 
 
 if __name__ == "__main__":
-    get_mdd(2, 1)
+    mdd = get_mdd(3, 2)
+

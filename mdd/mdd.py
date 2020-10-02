@@ -1,6 +1,7 @@
 from itertools import chain # used in various places
 from json import dump, load # used in dumpJSON and loadJSON
 from collections import defaultdict
+import copy
 import numpy as np
 from MDDArc import MDDArc
 from MDDNode import MDDNode, MDDNodeInfo
@@ -57,7 +58,7 @@ class MDD(object):
             # Long form
             s += '# Nodes\n'
             for (j, lyr) in enumerate(self.nodes):
-                s += 'L' + str(j) + ':\n'
+                s += 'Layer ' + str(j) + ':\n'
                 for v in lyr:
                     s += '\t' + str(v) + ': <'
                     s += 'in={' + ', '.join(str(a) for a in self.nodes[j][v].incoming) + '}, '
@@ -259,10 +260,8 @@ class MDD(object):
 
     def output_to_dot(self, nodeDotFunc=None, arcDotFunc=None, arcSortArgs=None, nodeSortArgs=None, reverseDir=False, fname=None):
         """Write the graphical structure of the MDD to a file.
-
         Write the graphical structure of the MDD to a file (<MDDName>.gv) in
         the DOT language.  The MDD can then be visualized with GraphViz.
-
         Args:
             nodeDotFunc (Callable[[object, int], str]): nodeDotFunc(s,j)
                 returns a string with the DOT options to use given node state
@@ -363,45 +362,43 @@ class MDD(object):
             for v in nodesinlayer:
                 length = len(self.nodes[j][v].incoming)
                 print("layer {} incoming edges: {}".format(j, length))
-
-                rand_bits = np.random.randint(2, size=length)
-                if np.count_nonzero(rand_bits) == 0 or np.count_nonzero(rand_bits == 0) == 0:
-                    print("one of splitted has no income edge:{} {}".format(np.count_nonzero(rand_bits),
-                                                                            np.count_nonzero(rand_bits == 0)))
+                if length <= 1:
                     continue
+                rand_bits = np.random.choice(length, 1)
                 if len(self.nodes[j]) > maxWidth - 1:
                     print("node canot be splitted, beacause reaching the bound!:", len(self.nodes[j]))
                     continue
-                new_nodes1 = MDDNode(layer=j, state="u_"+str(node_idx))
+                # node split
+                new_nodes1 = MDDNode(layer=j, state="u"+str(node_idx))
                 new_nodes1_income = set()
-                new_nodes2 = MDDNode(layer=j, state="u_"+str(node_idx+1))
+                new_nodes2 = MDDNode(layer=j, state="u"+str(node_idx+1))
                 new_nodes2_income = set()
 
                 self.add_node(new_nodes1)
                 self.add_node(new_nodes2)
                 node_idx += 2
-                for i, a in enumerate(self.nodes[j][v].incoming):       #set()
-                    if rand_bits[i] == 1:
+                for i, a in enumerate(self.nodes[j][v].incoming):
+                    if i == rand_bits:
                         newarc = MDDArc(a.label, a.tail, new_nodes1)
                         self.add_arc(newarc)
                         new_nodes1_income.add(a.label)
-                    elif rand_bits[i] == 0:
+                    else:
                         newarc = MDDArc(a.label, a.tail, new_nodes2)
                         self.add_arc(newarc)
                         new_nodes2_income.add(a.label)
                 print("split the incoming edges:", len(self.nodes[j][v].incoming), len(self.nodes[j][new_nodes1].incoming), len(self.nodes[j][new_nodes2].incoming))
-
+                # arc filtering
                 for x in self.nodes[j][v].outgoing:
                     if not x.label in new_nodes1_income:
                         newarc1 = MDDArc(x.label, new_nodes1, x.head)
                         self.add_arc(newarc1)
-                    if not x.label in new_nodes2_income:
-                        newarc2 = MDDArc(x.label, new_nodes2, x.head)
-                        self.add_arc(newarc2)
+                for x in self.nodes[j][v].outgoing:
+                    newarc2 = MDDArc(x.label, new_nodes2, x.head)
+                    self.add_arc(newarc2)
                 print("split the outgoings edges:", len(self.nodes[j][v].outgoing),
                       len(self.nodes[j][new_nodes1].outgoing),
                       len(self.nodes[j][new_nodes2].outgoing),
-                      len(self.nodes[j][new_nodes1].outgoing)+ len(self.nodes[j][new_nodes2].outgoing))
+                      len(self.nodes[j][new_nodes1].outgoing) + len(self.nodes[j][new_nodes2].outgoing))
                 print("add node: {} {}, remove node: {}".format(new_nodes1, new_nodes2, v))
                 self.remove_node(v)
             j += 1
@@ -426,3 +423,20 @@ class MDD(object):
                 self.add_arc(newarc)
             else:
                 raise ValueError('Unknown item type: check input file format')
+
+
+# MDD Filtering to Process Daily Requests
+def mdd_filtering(MDD, daily_request):
+    mdd = copy.copy(MDD)
+    # convert into a set of locations
+    daily_request = set(daily_request)
+    # add the terminal location for type 2 arcs
+    daily_request.add(0)
+    print("numArcLayers: {}".format(mdd.numArcLayers))
+    for j in range(mdd.numArcLayers):
+        nodesinlayer = [v for v in mdd.allnodes_in_layer(j)]
+        for v in nodesinlayer:
+            outs = [x for x in mdd.nodes[j][v].outgoing]
+            for x in outs:
+                if x.label not in daily_request:
+                    mdd.remove_arc(x)
