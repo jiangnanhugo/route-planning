@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class generator(nn.Module):
     def __init__(self, hidden_dim, z_dim, val_dim, n_vars):
         super(generator, self).__init__()
@@ -22,11 +23,6 @@ class generator(nn.Module):
 
         h = torch.zeros(batchnum, self.hidden_dim)
         c = torch.zeros(batchnum, self.hidden_dim)
-
-        if next(self.parameters()).is_cuda:
-            h = h.cuda()
-            c = c.cuda()
-            output = output.cuda()
 
         for i in range(self.n_vars):
             h, c = self.lstm(input[i], (h, c))
@@ -50,8 +46,8 @@ class discriminator(nn.Module):
         n_vars, n_batch, n_val = inp.size()
         assert n_val == self.val_dim
         h0 = torch.unsqueeze(self.h0.repeat((n_batch, 1)), 0)
-        if next(self.parameters()).is_cuda:
-            h0 = h0.cuda()
+
         rnn_oup, rnn_hn = self.rnn(inp, h0)
+
         return torch.sigmoid(self.lin(rnn_hn))
 

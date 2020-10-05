@@ -1,4 +1,4 @@
-from mdd import MDD, mdd_filtering
+from mdd.mdd import MDD
 import random
 
 
@@ -48,79 +48,7 @@ class Arc(object):
         return '{type: ' + self.Type + ', label:' + self.label + \
                ', head:' + str(self.head) + ', tail:' + str(self.tail) + '}'
 
-
-def build_nodes_arcs(label_names):
-    node_list = []
-    # 0-th layer
-    uid = 0
-    source = Node(0, "s", 'none', 'any')
-    sink = Node(5, "t", 'any', 't')
-    uid += 1
-    node_list.append([source, ])
-
-    # middle layer
-    for layer in range(4):
-        temp_list = []
-        if layer % 2 == 0:
-            for i in range(len(label_names)):
-                uid += 1
-                new_node = Node(layer + 1, "u_" + str(uid), label_names[i][layer], label_names[i][layer + 1])
-                temp_list.append(new_node)
-        else:
-            uid += 1
-            new_node = Node(layer + 1, "u_" + str(uid), "any", "any")
-            temp_list.append(new_node)
-        node_list.append(temp_list)
-        # print(len(node_list[layer]))
-
-    node_list.append([sink])
-
-    # build arc
-    arc_list = []
-    temp_list = []
-    source = node_list[0][0]
-    # source -> s1
-    for i in range(len(label_names)):
-        dest = node_list[1][i]
-        new_arc = Arc(dest.id, source.id, dest.in_come)
-        temp_list.append(new_arc)
-    arc_list.append(temp_list)
-
-    # s1->f1
-    for i in range(len(label_names)):
-        source=node_list[1][i]
-        out_go=set()
-        for x in label_names:
-            if x[1]==source.in_come:
-                out_go.add(x[2])
-        for dest in node_list[2]:
-            if dest.in_come in out_go:
-                new_arc = Arc(dest.id, source.id, dest.in_come)
-                temp_list.append(new_arc)
-    arc_list.append(temp_list)
-
-
-
-    temp_list = []
-    dest = node_list[5][0]
-    for i in range(len(label_names)):
-        source = node_list[4][i]
-        new_arc = Arc(dest.id, source.id, "None")
-        temp_list.append(new_arc)
-    arc_list.append(temp_list)
-
-    json_list = [{"name": "IFTTT", "Type": "name"}]
-    for i in range(len(node_list)):
-        for x in node_list[i]:
-            json_list.append(x.get_string())
-
-    for i in range(len(arc_list)):
-        for x in arc_list[i]:
-            json_list.append(x.get_string())
-    return json_list
-
-
-def build_full_tsp(n_locations):
+def build_full_tsp(n_locations, max_stops):
     node_list = []
     # 0-th layer
     uid = 0
@@ -130,8 +58,8 @@ def build_full_tsp(n_locations):
     node_list.append(source)
 
     # middle layer
-    for layer in range(n_locations):
-        if layer == n_locations-1:
+    for layer in range(max_stops):
+        if layer == max_stops-1:
             new_node = Node(layer + 1, "u" + str(uid), "layer_"+str(layer), "t")
         else:
             new_node = Node(layer + 1, "u" + str(uid), "layer_"+str(layer), "layer_"+str(layer+1))
@@ -141,7 +69,7 @@ def build_full_tsp(n_locations):
 
     # build arc
     arc_list = []
-    for layer in range(n_locations):                                           # type 1 arc
+    for layer in range(max_stops):                                           # type 1 arc
         temp_list = []
         for i in range(n_locations):
             new_arc = Arc(node_list[layer+1].id, node_list[layer].id, i+1)
@@ -163,17 +91,10 @@ def build_full_tsp(n_locations):
     return json_content
 
 
-def get_mdd(n_locations, maxwidth=0):
+def get_mdd(n_locations, max_stops, maxwidth=0):
     mymdd = MDD()
-    json_content = build_full_tsp(n_locations)
+    json_content = build_full_tsp(n_locations, max_stops)
     mymdd.loadJSON(json_content)
     mymdd.relax_mdd(maxwidth)
-    # print(mymdd.__str__(showLong=True))
-    mdd_filtering(mymdd, [1, 2])
-    print(mymdd.__str__(showLong=True))
     return mymdd
-
-
-if __name__ == "__main__":
-    mdd = get_mdd(3, 2)
 

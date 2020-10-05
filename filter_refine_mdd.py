@@ -1,7 +1,7 @@
 import copy
 from itertools import product
 import sys
-from mdd import MDD_TSP
+from mdd.mdd_backup import MDD_TSP
 
 
 def floyd_warshall(paired_dist):
@@ -37,7 +37,7 @@ def read_tsp_file_full_matrix(tsp_file):
 
 
 def main():
-    tsp_file = "./benchmarks/TSPLIB95/bays29.tsp"
+    tsp_file = "dataset/raw_data/TSPLIB95/bays29.tsp"
     mdd_file = "output/bays29_s0_e0_md1000_ms10_w100.mdd"
 
     pairwise_dist = read_tsp_file_full_matrix(tsp_file)

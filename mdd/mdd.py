@@ -3,8 +3,8 @@ from json import dump, load # used in dumpJSON and loadJSON
 from collections import defaultdict
 import copy
 import numpy as np
-from MDDArc import MDDArc
-from MDDNode import MDDNode, MDDNodeInfo
+from mdd.MDDArc import MDDArc
+from mdd.MDDNode import MDDNode, MDDNodeInfo
 
 
 class MDD(object):
@@ -425,18 +425,4 @@ class MDD(object):
                 raise ValueError('Unknown item type: check input file format')
 
 
-# MDD Filtering to Process Daily Requests
-def mdd_filtering(MDD, daily_request):
-    mdd = copy.copy(MDD)
-    # convert into a set of locations
-    daily_request = set(daily_request)
-    # add the terminal location for type 2 arcs
-    daily_request.add(0)
-    print("numArcLayers: {}".format(mdd.numArcLayers))
-    for j in range(mdd.numArcLayers):
-        nodesinlayer = [v for v in mdd.allnodes_in_layer(j)]
-        for v in nodesinlayer:
-            outs = [x for x in mdd.nodes[j][v].outgoing]
-            for x in outs:
-                if x.label not in daily_request:
-                    mdd.remove_arc(x)
+
