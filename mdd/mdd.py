@@ -218,11 +218,14 @@ class MDD(object):
         cur_state = list(cur_state)[0]
         neighbors_labels = []
         for j, name in enumerate(arc_names):
+            if not cur_state:
+                raise AttributeError("cur_state is empty")
             next_state, neighbors = self._find_next_state(cur_state, name)
             cur_state = next_state
             neighbors_labels.append(neighbors)
 
-        neighbors_labels.append(self.get_outgoing_of_state_at_layer(cur_state))
+
+        # neighbors_labels.append(self.get_outgoing_of_state_at_layer(cur_state))
         return neighbors_labels
 
     def get_outgoing_of_state_at_layer(self, cur_state):
@@ -408,10 +411,10 @@ class MDD(object):
     def loadJSON(self, json_content):
         """Load an MDD from a JSON file."""
         self._clear()
-        dataList = json_content
+        dataList = json_content['init']
         nodeDict = dict()
-        self.name = dataList['mdd_name']
-        for item in dataList['init']:
+        self.name = json_content['mdd_name']
+        for item in dataList:
             if item['Type'] == 'node':
                 while int(item['layer']) >= self.numNodeLayers:
                     self._append_new_layer()
@@ -423,6 +426,3 @@ class MDD(object):
                 self.add_arc(newarc)
             else:
                 raise ValueError('Unknown item type: check input file format')
-
-
-

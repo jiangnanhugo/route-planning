@@ -92,7 +92,7 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
             out = gnt(z)
             vars_predict = F.softmax(out, dim=2)
             if use_crisp:
-                out_mask = crisp.generate_mask_with_ground_truth(real_paths, visit)
+                out_mask = crisp.generate_mask_with_ground_truth(real_paths)
                 out_mask = torch.from_numpy(out_mask)
                 # mask
                 # print("out mask:",out_mask)

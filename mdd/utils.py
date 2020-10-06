@@ -48,16 +48,19 @@ class Arc(object):
         return '{type: ' + self.Type + ', label:' + self.label + \
                ', head:' + str(self.head) + ', tail:' + str(self.tail) + '}'
 
+
 def build_full_tsp(n_locations, max_stops):
     node_list = []
     # 0-th layer
     uid = 0
     source = Node(0, "s", 'none', 'any')
-    sink = Node(n_locations+1, "t", 'any', 't')
+    sink = Node(max_stops+1, "t", 'any', 't')
     uid += 1
     node_list.append(source)
 
     # middle layer
+    print("max stops: {}".format(max_stops))
+    print("n locations: {}".format(n_locations))
     for layer in range(max_stops):
         if layer == max_stops-1:
             new_node = Node(layer + 1, "u" + str(uid), "layer_"+str(layer), "t")
@@ -79,6 +82,8 @@ def build_full_tsp(n_locations, max_stops):
     for node in node_list[1:-1]:                                               # type 2 arc
         arc_list.append([Arc(node_list[-1].id, node.id, 0)])
 
+    # the terminal node has a self cycle.
+    arc_list.append([Arc(node_list[-1].id, node_list[-1].id, 0)])
     init = []
     for x in node_list:
         init.append(x.get_string())
@@ -95,6 +100,6 @@ def get_mdd(n_locations, max_stops, maxwidth=0):
     mymdd = MDD()
     json_content = build_full_tsp(n_locations, max_stops)
     mymdd.loadJSON(json_content)
-    mymdd.relax_mdd(maxwidth)
+    # mymdd.relax_mdd(maxwidth)
     return mymdd
 
