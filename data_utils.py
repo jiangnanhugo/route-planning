@@ -36,75 +36,6 @@ class ScheduleProb(object):
             reward += self.rewards[i][loc]
         return reward
 
-    def valid_routes(self, oup, visit):
-        num_valid = np.zeros(len(oup), dtype=np.int32)
-        num_loc_invalid = 0
-        num_dis_invalid = 0
-        num_strict_subset = 0
-        num_empty = 0
-
-        for idx, (oi, vi) in enumerate(zip(oup, visit)):
-            dis = 0.
-            visited = set([])
-            to_visit = set([i for i in range(self.num_locs) if vi[i] > 0.5])
-            cur_loc = self.startp
-
-            loc_valid = True
-            is_subset = True
-
-            last_non_endp = -1
-            first_endp = -1
-            for i, next_loc in enumerate(oi):
-                if (next_loc in visited) or (not next_loc in to_visit):
-                    loc_valid = False
-
-                if (not next_loc in to_visit) and (not next_loc in visited):
-                    is_subset = False
-
-                if next_loc != self.endp:
-                    visited.add(next_loc)
-                    if next_loc in to_visit:
-                        to_visit.remove(next_loc)
-
-                if next_loc == self.endp and first_endp < 0:
-                    first_endp = i
-
-                if next_loc != self.endp:
-                    last_non_endp = i
-
-                dis += self.paired_dist[cur_loc][next_loc]
-                cur_loc = next_loc
-
-            if last_non_endp >= first_endp:
-                loc_valid = False
-
-            if dis > self.max_duration:
-                dis_valid = False
-            else:
-                dis_valid = True
-
-            if not loc_valid:
-                num_loc_invalid += 1
-
-            if not dis_valid:
-                num_dis_invalid += 1
-
-            if (len(to_visit) != 1 or (not self.endp in to_visit)) and (is_subset) and dis_valid:
-                if last_non_endp >= 0:
-                    num_strict_subset += 1
-                subset_valid = False
-            else:
-                subset_valid = True
-
-            if subset_valid and loc_valid and dis_valid:
-                num_valid[idx]= 1
-
-            if last_non_endp < 0:
-                num_empty += 1
-
-        return num_valid
-
-
 class ScheduleDataGen(object):
     def __init__(self, data_file, max_stop, num_locs):
         self.data = []
@@ -132,26 +63,30 @@ class ScheduleDataGen(object):
         data = np.zeros((self.max_stop, batch_size, self.num_locs))
         visit = np.zeros((batch_size, self.num_locs))
         paths = np.zeros((self.max_stop, batch_size), dtype=np.int)
+        daily_requests = []
         for i in range(batch_size):
             it = (self.it + i) % self.num_data
             j = 0
+            one_request = set([])
             while j < len(self.data[it]):
                 loc = self.data[it][j]
                 visit[i, loc] = 1.0
                 data[j, i, loc] = 1.0
                 paths[j, i] = loc
                 j += 1
+                one_request.add(loc)
             # append to the same length
             while j < self.max_stop:
                 data[j, i, loc] = 1.0
                 paths[j, i] = loc
                 j += 1
+                one_request.add(loc)
+            daily_requests.append(one_request)
 
         self.it += batch_size
         self.it %= self.num_data
 
-        return data, visit, paths
-
+        return data, visit, paths, daily_requests
 
 
 def score_to_routes(score, real_path_canddates, use_post_process_type2):

@@ -73,7 +73,7 @@ class MDD(object):
             # Short form
             s += '# Nodes\n'
             for (j, lyr) in enumerate(self.nodes):
-                s += 'L' + str(j) + ': '
+                s += 'L' + str(j) + ': (# nodes=' + str(len(self.allnodes_in_layer(j))) +")\n"
                 s += ', '.join(str(v) for v in self.allnodes_in_layer(j)) + '\n'
             s += '# (Outgoing) Arcs\n'
             s += ', '.join(str(a) for a in self.alloutgoingarcs())
@@ -360,7 +360,7 @@ class MDD(object):
         node_idx = 40
         print("numArcLayers: {}".format(self.numArcLayers))
         while j < self.numArcLayers and len(self.allnodes_in_layer(j)) < maxWidth:
-            print(j, len(self.allnodes_in_layer(j)), maxWidth)
+            # print(j, len(self.allnodes_in_layer(j)), maxWidth)
             nodesinlayer = [v for v in self.allnodes_in_layer(j)]
             for v in nodesinlayer:
                 length = len(self.nodes[j][v].incoming)
@@ -407,6 +407,80 @@ class MDD(object):
             j += 1
             if j >= self.numArcLayers:
                 j = 1
+
+    def relax_mdd_by_random_divide(self, maxWidth):
+        """Load an MDD from a JSON file."""
+        j = 1
+        node_idx = 40
+        print("numArcLayers: {}".format(self.numArcLayers))
+        while j < self.numArcLayers and len(self.allnodes_in_layer(j)) < maxWidth:
+            print("{}-th layer, # of nodes={}".format(j, len(self.allnodes_in_layer(j))))
+            nodes_in_layer = [v for v in self.allnodes_in_layer(j)]
+            do_splitted = False
+            for v in nodes_in_layer:
+                length = len(self.nodes[j][v].incoming)
+                if length <= 1:
+                    continue
+                if len(self.nodes[j]) >= maxWidth:
+                    print("node canot be splitted, beacause reaching the bound!:", len(self.nodes[j]))
+                    break
+                rand_bits = np.random.randn(length)
+                while np.count_nonzero(rand_bits>0.5) == 0 or np.count_nonzero(rand_bits<=0.5) == 0:
+                    rand_bits = np.random.randint(2, size=length)
+                    # print("one of splitted has no income edge:{} {}".format(np.count_nonzero(rand_bits),
+                    #                                                         np.count_nonzero(rand_bits == 0)))
+                    # continue
+                # print("rand_bits:", len(rand_bits))
+
+                """
+                node splitting
+                split the incoming arcs by half, and copy the outgoing arcs
+                """
+                new_nodes1 = MDDNode(layer=j, state="u"+str(node_idx))
+                new_nodes2 = MDDNode(layer=j, state="u"+str(node_idx+1))
+                self.add_node(new_nodes1)
+                self.add_node(new_nodes2)
+                node_idx += 2
+                new_nodes1_income, new_nodes2_income = set(), set()
+                for k, a in enumerate(self.nodes[j][v].incoming):
+                    if rand_bits[k] > 0.5:
+                        newarc = MDDArc(a.label, a.tail, new_nodes1)
+                        new_nodes1_income.add(a.label)
+                    else:
+                        newarc = MDDArc(a.label, a.tail, new_nodes2)
+                        new_nodes2_income.add(a.label)
+                    self.add_arc(newarc)
+                for x in self.nodes[j][v].outgoing:
+                    newarc1 = MDDArc(x.label, new_nodes1, x.head)
+                    self.add_arc(newarc1)
+                    newarc2 = MDDArc(x.label, new_nodes2, x.head)
+                    self.add_arc(newarc2)
+                """
+                arc filtering.
+                filter the arc if there is only one incoming arc of the node
+                """
+                print("split the incoming edges: {} -> ({}, {})".format(len(self.nodes[j][v].incoming),
+                      len(self.nodes[j][new_nodes1].incoming), len(self.nodes[j][new_nodes2].incoming)))
+                self.remove_node(v)
+                if len(new_nodes1_income) == 1:
+                    # print('arc filtering 1', new_nodes1_income)
+                    out_arcs = [x for x in self.nodes[j][new_nodes1].outgoing]
+                    for x in out_arcs:
+                        if x.label in new_nodes1_income:
+                            print("remove arc:", x)
+                            self.remove_arc(x)
+
+                if len(new_nodes2_income) == 1:
+                    # print('arc filtering 2', new_nodes2_income)
+                    out_arcs = [x for x in self.nodes[j][new_nodes2].outgoing]
+                    for x in out_arcs:
+                        if x.label in new_nodes2_income:
+                            print("remove arc:", x)
+                            self.remove_arc(x)
+
+                do_splitted = True
+            if len(self.allnodes_in_layer(j)) > maxWidth or do_splitted == False:
+                j += 1
 
     def loadJSON(self, json_content):
         """Load an MDD from a JSON file."""

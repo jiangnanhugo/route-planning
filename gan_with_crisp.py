@@ -11,22 +11,21 @@ from mdd.crisp import CRISP
 np.printoptions(precision=3, suppress=True)
 
 
-def test(data_gen, testing_set_size, g_n_input, crisp, use_crisp, use_post_process_type1,use_post_process_type2, gnt):
+def test(data_gen, testing_set_size, g_n_input, crisp, use_crisp, use_post_process_type1, use_post_process_type2, gnt):
     real_routes = []
     predicted_routes = []
     num_valid_routes = []
     norm_reward = []
     for i in range(testing_set_size):
-        _, visit, real_paths = data_gen.next_data(1)
+        _, visit, real_paths, daily_requests = data_gen.next_data(1)
         visit_z0 = torch.Tensor(visit).float()
         visit_z = visit_z0.repeat(prob.max_stops + 1, 1, 1)
         z = torch.randn([prob.max_stops + 1, 1, g_n_input])
         z = torch.cat((visit_z, z), 2)
-
         out = gnt(z)
         vars_predict = F.softmax(out, dim=2)
         if use_crisp:
-            predicted_route = crisp.generate_route_for_inference(vars_predict.detach().numpy(), visit_z0)
+            predicted_route = crisp.generate_route_for_inference(vars_predict.detach().numpy(), daily_requests)
         else:
             predicted_route = data_utils.score_to_routes(vars_predict.detach().numpy().squeeze(),
                                                          real_paths.transpose()[0],
@@ -42,7 +41,9 @@ def test(data_gen, testing_set_size, g_n_input, crisp, use_crisp, use_post_proce
                 predicted_route = dup_removd_route
 
         real_route = real_paths.transpose()
-        is_valid = prob.valid_routes([predicted_route], visit)[0]
+        # print(predicted_route, daily_requests)
+        is_valid = crisp.valid_routes(predicted_route, daily_requests[0])
+        # print(predicted_route, daily_requests, is_valid)
         num_valid_routes.append(is_valid)
         if is_valid:
             norm_reward.append(prob.norm_reward([predicted_route], real_route))
@@ -51,9 +52,8 @@ def test(data_gen, testing_set_size, g_n_input, crisp, use_crisp, use_post_proce
 
     print('real={}'.format(real_routes[:10]))
     print('gen={}'.format(predicted_routes[:10]))
-    print('valid routes={}'.format(sum(num_valid_routes) /(len(num_valid_routes)+0.0001)))
+    print('valid routes={}'.format(sum(num_valid_routes) /(len(num_valid_routes))))
     print('norm-reward={}'.format(sum(norm_reward) /(len(norm_reward)+0.0001)))
-
 
 
 def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hidden, g_n_hidden, g_n_input,
@@ -61,7 +61,6 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
     # prepare the CRISP module
     data_gen = data_utils.ScheduleDataGen(data_file, prob.max_stops, prob.num_locs)
     crisp = CRISP(prob.num_locs, prob.max_stops, max_width)
-    # exit()
 
     # generators
     gnt = generator(hidden_dim=g_n_hidden, z_dim=g_n_input + prob.num_locs, val_dim=prob.num_locs,
@@ -80,7 +79,7 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
     for epoch in range(1, 50):
         print("[ {} iterations]".format(epoch))
         for it in range(100):
-            vars_real, visit, real_paths = data_gen.next_data(train_batch_size)
+            vars_real, visit, real_paths, daily_requests = data_gen.next_data(train_batch_size)
             vars_real = torch.Tensor(vars_real).float()
             visit_z0 = torch.Tensor(visit).float()
 
@@ -92,7 +91,7 @@ def train(data_file, prob, train_batch_size, max_width, testing_set_size, d_n_hi
             out = gnt(z)
             vars_predict = F.softmax(out, dim=2)
             if use_crisp:
-                out_mask = crisp.generate_mask_with_ground_truth(real_paths)
+                out_mask = crisp.generate_mask_with_ground_truth(real_paths, daily_requests)
                 out_mask = torch.from_numpy(out_mask)
                 # mask
                 # print("out mask:",out_mask)

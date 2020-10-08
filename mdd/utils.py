@@ -100,6 +100,7 @@ def get_mdd(n_locations, max_stops, maxwidth=0):
     mymdd = MDD()
     json_content = build_full_tsp(n_locations, max_stops)
     mymdd.loadJSON(json_content)
-    # mymdd.relax_mdd(maxwidth)
+    # print(mymdd.__str__(showLong=True))
+    mymdd.relax_mdd_by_random_divide(maxwidth)
+    # exit(1)
     return mymdd
-
