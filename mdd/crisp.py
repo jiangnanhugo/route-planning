@@ -60,18 +60,22 @@ class CRISP(object):
                 mask[i,x]=1.0
         return mask
 
-    def valid_routes(self, oup, daily_request):
-        full_conver = True
-        all_diff = True
-        visited = set()
-        for x in oup:
-            if x not in daily_request:
-                full_conver = False
-            if x in visited:
-                all_diff = False
-            if x != 0:
-                visited.add(x)
-        return full_conver and all_diff
+    def valid_routes(self, oups, daily_requests):
+        num_valid = 0
+        for oup, daily_request in zip(oups, daily_requests):
+            full_conver = True
+            all_diff = True
+            visited = set()
+            for x in oup:
+                if x not in daily_request:
+                    full_conver = False
+                if x in visited:
+                    all_diff = False
+                if x != 0:
+                    visited.add(x)
+            num_valid += full_conver and all_diff
+
+        return num_valid
 
     def generate_route_for_inference(self, seq_out, daily_requests):
         max_stop_seq_out, n_batch, n_locs = seq_out.shape
@@ -79,29 +83,25 @@ class CRISP(object):
         assert max_stop_seq_out == self.max_stops + 1
         assert n_locs == self.n_locations
 
+        generated_routes = []
+        for nb in range(n_batch):
+            generated_route = []
+            filtered_mdd = self.mdd_filtering(self.mdd, daily_requests[nb])
+            for i in range(len(daily_requests[nb])):
+                # [6, batch_size, 29]
+                neighbor_along_path = filtered_mdd.find_last_neighbor_along_path(generated_route)
 
-        filtered_mdd = self.mdd_filtering(self.mdd, daily_requests[0])
-        daily_requests = list(daily_requests[0])
-        generated_route=[]
-        # print(daily_requests, len(daily_requests))
-        for i in range(len(daily_requests)):
-            # [6, batch_size, 29]
-            neighbor_along_path = filtered_mdd.find_last_neighbor_along_path(generated_route)
+                out_mask = self.idx_to_binary(neighbor_along_path)
 
-            # print("{}-th neighbour along path: {}".format(i, neighbor_along_path))
-            out_mask = self.idx_to_binary(neighbor_along_path)
+                current_out = np.multiply(seq_out[i,nb,:], out_mask[i,:])
+                normalized_vars_predict = current_out / np.sum(current_out, keepdims=True)
+                normalized_vars_predict[np.isnan(normalized_vars_predict)] = 0.0
 
-            current_out = np.multiply(seq_out[i,:], out_mask[i,:])
-            normalized_vars_predict = current_out / np.sum(current_out, keepdims=True)
-            normalized_vars_predict[np.isnan(normalized_vars_predict)] = 0.0
-
-            sampled_loc = self.random_sample_with_majority_voting(normalized_vars_predict)
-            # print("{}-th sampled loc: {}".format(i, sampled_loc))
-            generated_route.append(sampled_loc)
-        if len(generated_route) < len(daily_requests):
-            extended = [0 for _ in range(len(daily_requests) - len(generated_route))]
-            # generated_route.extend(extended)
-        return generated_route
+                sampled_loc = self.random_sample_with_majority_voting(normalized_vars_predict)
+                # print("{}-th sampled loc: {}".format(i, sampled_loc))
+                generated_route.append(sampled_loc)
+            generated_routes.append(generated_route)
+        return generated_routes
 
 
     @staticmethod
