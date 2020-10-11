@@ -463,10 +463,8 @@ class MDD(object):
                       len(self.nodes[j][new_nodes1].incoming), len(self.nodes[j][new_nodes2].incoming)))
                 self.remove_node(v)
                 if len(new_nodes1_income) == 1:
-                    print("new_nodes1_income", new_nodes1_income)
                     self.recurse_arc_filtering(j, new_nodes1, new_nodes1_income)
                 if len(new_nodes2_income) == 1:
-                    print("new_nodes2_income", new_nodes2_income)
                     self.recurse_arc_filtering(j, new_nodes2, new_nodes2_income)
 
                 do_splitted = True
@@ -478,6 +476,9 @@ class MDD(object):
         # print(list(self.nodes[self.numArcLayers - 1].keys())[0])
         if self.nodes[layer_idx][node_idx] == self.nodes[self.numArcLayers - 1]:
             print("arrive the terminal node")
+            return
+        if len(self.nodes[layer_idx][node_idx].incoming) != 1:
+            print("the node has multiple incoming edges")
             return
         for x in out_arcs:
             if x.label in to_be_removed_node_label:
