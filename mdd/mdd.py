@@ -424,9 +424,12 @@ class MDD(object):
                 if len(self.nodes[j]) >= maxWidth:
                     print("node canot be splitted, beacause reaching the bound!:", len(self.nodes[j]))
                     break
-                rand_bits = np.random.randn(length)
-                while np.count_nonzero(rand_bits>0.5) == 0 or np.count_nonzero(rand_bits<=0.5) == 0:
-                    rand_bits = np.random.randint(2, size=length)
+                idxes = [t for t in range(length)]
+                np.random.shuffle(idxes)
+                rand_bits = idxes[:length // 2]
+                # rand_bits = np.random.randn(length)
+                # while np.count_nonzero(rand_bits>0.5) == 0 or np.count_nonzero(rand_bits<=0.5) == 0:
+                #     rand_bits = np.random.randint(2, size=length)
                     # print("one of splitted has no income edge:{} {}".format(np.count_nonzero(rand_bits),
                     #                                                         np.count_nonzero(rand_bits == 0)))
                     # continue
@@ -443,7 +446,7 @@ class MDD(object):
                 node_idx += 2
                 new_nodes1_income, new_nodes2_income = set(), set()
                 for k, a in enumerate(self.nodes[j][v].incoming):
-                    if rand_bits[k] > 0.5:
+                    if k in rand_bits:
                         newarc = MDDArc(a.label, a.tail, new_nodes1)
                         new_nodes1_income.add(a.label)
                     else:
@@ -462,14 +465,26 @@ class MDD(object):
                 print("split the incoming edges: {} -> ({}, {})".format(len(self.nodes[j][v].incoming),
                       len(self.nodes[j][new_nodes1].incoming), len(self.nodes[j][new_nodes2].incoming)))
                 self.remove_node(v)
-                if len(new_nodes1_income) == 1:
-                    self.recurse_arc_filtering(j, new_nodes1, new_nodes1_income)
-                if len(new_nodes2_income) == 1:
-                    self.recurse_arc_filtering(j, new_nodes2, new_nodes2_income)
+                if  len(self.nodes[j][new_nodes1].incoming) == 1:
+                    visited_locations = self.extract_single_income_labels(j,new_nodes1)
+                    self.recurse_arc_filtering(j, new_nodes1, visited_locations)
+                if  len(self.nodes[j][new_nodes2].incoming) == 1:
+                    visited_locations = self.extract_single_income_labels(j, new_nodes2)
+                    self.recurse_arc_filtering(j, new_nodes2, visited_locations)
 
                 do_splitted = True
             if len(self.allnodes_in_layer(j)) > maxWidth or do_splitted == False:
                 j += 1
+
+    def extract_single_income_labels(self,layer_idx, pivot_node):
+        single_income_labels = set()
+        while layer_idx >0:
+            the_arc = list(self.nodes[layer_idx][pivot_node].incoming)[0]
+            single_income_labels.add(the_arc.label)
+            pivot_node= the_arc.tail
+            layer_idx -=1
+        return single_income_labels
+
 
     def recurse_arc_filtering(self, layer_idx, node_idx, to_be_removed_node_label):
         out_arcs = [x for x in self.nodes[layer_idx][node_idx].outgoing]
@@ -486,6 +501,7 @@ class MDD(object):
                     self.recurse_arc_filtering(layer_idx+1, x.head, to_be_removed_node_label)
                 print("remove arc:", x)
                 self.remove_arc(x)
+
 
     def loadJSON(self, json_content):
         """Load an MDD from a JSON file."""
