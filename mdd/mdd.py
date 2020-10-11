@@ -463,24 +463,28 @@ class MDD(object):
                       len(self.nodes[j][new_nodes1].incoming), len(self.nodes[j][new_nodes2].incoming)))
                 self.remove_node(v)
                 if len(new_nodes1_income) == 1:
-                    # print('arc filtering 1', new_nodes1_income)
-                    out_arcs = [x for x in self.nodes[j][new_nodes1].outgoing]
-                    for x in out_arcs:
-                        if x.label in new_nodes1_income:
-                            print("remove arc:", x)
-                            self.remove_arc(x)
-
+                    print("new_nodes1_income", new_nodes1_income)
+                    self.recurse_arc_filtering(j, new_nodes1, new_nodes1_income)
                 if len(new_nodes2_income) == 1:
-                    # print('arc filtering 2', new_nodes2_income)
-                    out_arcs = [x for x in self.nodes[j][new_nodes2].outgoing]
-                    for x in out_arcs:
-                        if x.label in new_nodes2_income:
-                            print("remove arc:", x)
-                            self.remove_arc(x)
+                    print("new_nodes2_income", new_nodes2_income)
+                    self.recurse_arc_filtering(j, new_nodes2, new_nodes2_income)
 
                 do_splitted = True
             if len(self.allnodes_in_layer(j)) > maxWidth or do_splitted == False:
                 j += 1
+
+    def recurse_arc_filtering(self, layer_idx, node_idx, to_be_removed_node_label):
+        out_arcs = [x for x in self.nodes[layer_idx][node_idx].outgoing]
+        # print(list(self.nodes[self.numArcLayers - 1].keys())[0])
+        if self.nodes[layer_idx][node_idx] == self.nodes[self.numArcLayers - 1]:
+            print("arrive the terminal node")
+            return
+        for x in out_arcs:
+            if x.label in to_be_removed_node_label:
+                if x.head != list(self.nodes[self.numArcLayers - 1].keys())[0]:
+                    self.recurse_arc_filtering(layer_idx+1, x.head, to_be_removed_node_label)
+                print("remove arc:", x)
+                self.remove_arc(x)
 
     def loadJSON(self, json_content):
         """Load an MDD from a JSON file."""
