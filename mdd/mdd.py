@@ -1,5 +1,5 @@
-from itertools import chain # used in various places
-from json import dump, load # used in dumpJSON and loadJSON
+from itertools import chain  # used in various places
+from json import dump, load  # used in dumpJSON and loadJSON
 from collections import defaultdict
 import copy
 import numpy as np
@@ -32,16 +32,14 @@ class MDD(object):
     @property
     def numArcLayers(self):
         # Number of arc layers; equal to number of 'variables'.
-        return len(self.nodes)-1
+        return len(self.nodes) - 1
 
     @property
-    def widthList(self):
-        # Number of nodes in each layer
+    def widthList(self):                                # Number of nodes in each layer
         return list(len(lyr) for lyr in self.nodes)
 
     @property
-    def maxWidth(self):
-        # Maximum number of nodes in a single node layer.
+    def maxWidth(self):                                # Maximum number of nodes in a single node layer.
         return max(len(lyr) for lyr in self.nodes)
 
     def __str__(self, showLong=False, showIncoming=False):
@@ -73,7 +71,7 @@ class MDD(object):
             # Short form
             s += '# Nodes\n'
             for (j, lyr) in enumerate(self.nodes):
-                s += 'L' + str(j) + ': (# nodes=' + str(len(self.allnodes_in_layer(j))) +")\n"
+                s += 'L' + str(j) + ': (# nodes=' + str(len(self.allnodes_in_layer(j))) + ")\n"
                 s += ', '.join(str(v) for v in self.allnodes_in_layer(j)) + '\n'
             s += '# (Outgoing) Arcs\n'
             s += ', '.join(str(a) for a in self.alloutgoingarcs())
@@ -82,8 +80,8 @@ class MDD(object):
                 s += ', '.join(str(a) for a in self.allincomingarcs())
         return s
 
-    def __repr__(self):
-        return 'MDD(' + repr(self.name) + ', ' + repr(self.nodes) + ')'
+    # def __repr__(self):
+    #     return 'MDD(' + repr(self.name) + ', ' + repr(self.nodes) + ')'
 
     def _get_node_info(self, node):
         """Get 'MDDNodeInfo' corresponding to 'node'.
@@ -149,7 +147,7 @@ class MDD(object):
 
     def allincomingarcs(self):
         """Return all incoming arcs in the MDD."""
-        return chain.from_iterable(ui.incoming for j in range(self.numArcLayers) for ui in self.nodes[j+1].values())
+        return chain.from_iterable(ui.incoming for j in range(self.numArcLayers) for ui in self.nodes[j + 1].values())
 
     def add_arc(self, newarc):
         """Add an arc to the MDD (with sanity checks).
@@ -224,8 +222,6 @@ class MDD(object):
             cur_state = next_state
             neighbors_labels.append(neighbors)
 
-
-        # neighbors_labels.append(self.get_outgoing_of_state_at_layer(cur_state))
         return neighbors_labels
 
     def get_outgoing_of_state_at_layer(self, cur_state):
@@ -261,7 +257,8 @@ class MDD(object):
     _default_asa = {'key': lambda a: a.label}
     _default_nsa = {'key': lambda v: v.state, 'reverse': True}
 
-    def output_to_dot(self, nodeDotFunc=None, arcDotFunc=None, arcSortArgs=None, nodeSortArgs=None, reverseDir=False, fname=None):
+    def output_to_dot(self, nodeDotFunc=None, arcDotFunc=None, arcSortArgs=None, nodeSortArgs=None, reverseDir=False,
+                      fname=None):
         """Write the graphical structure of the MDD to a file.
         Write the graphical structure of the MDD to a file (<MDDName>.gv) in
         the DOT language.  The MDD can then be visualized with GraphViz.
@@ -305,7 +302,7 @@ class MDD(object):
 
         outf = open(fname, 'w')
         outf.write('digraph "%s" {\n' % self.name)
-        outf.write('graph[fontname="Monospace Regular"];\nnode[fontname="Monospace Regular"];\nedge[fontname="Monospace Regular"];\n')
+        outf.write('graph[fontname="Ubuntu"];\nnode[fontname="Ubuntu"];\nedge[fontname="Ubuntu"];\n')
         if reverseDir:
             outf.write('edge [dir=back];\n')
         if arcSortArgs is not None:
@@ -318,14 +315,15 @@ class MDD(object):
                 if arcSortArgs is not None:
                     arcsinlayer.sort(**arcSortArgs)
                 for arc in arcsinlayer:
-                    outf.write('%d -> %d[%s];\n' % (hash(getattr(arc, srcAttr)), hash(getattr(arc, destAttr)), arcDotFunc(arc.label, arc.tail.layer)))
+                    outf.write('%d -> %d[%s];\n' % (
+                    hash(getattr(arc, srcAttr)), hash(getattr(arc, destAttr)), arcDotFunc(arc.label, arc.tail.layer)))
         if nodeSortArgs is not None:
             for j in range(self.numNodeLayers):
                 nodesinlayer = [v for v in self.allnodes_in_layer(j)]
                 if len(nodesinlayer) > 1:
                     nodesinlayer.sort(**nodeSortArgs)
                     for i in range(len(nodesinlayer) - 1):
-                        outf.write('%d -> %d[style=invis];\n' % (hash(nodesinlayer[i]), hash(nodesinlayer[i+1])))
+                        outf.write('%d -> %d[style=invis];\n' % (hash(nodesinlayer[i]), hash(nodesinlayer[i + 1])))
                     outf.write('{rank=same')
                     for v in nodesinlayer:
                         outf.write(';%d' % hash(v))
@@ -349,7 +347,8 @@ class MDD(object):
         for v in self.allnodes():
             dataList.append({'Type': 'node', 'layer': v.layer, 'state': stateDumpFunc(v.state), 'id': hash(v)})
         for a in self.alloutgoingarcs():
-            dataList.append({'Type': 'arc', 'label': labelDumpFunc(a.label), 'tail': hash(a.tail), 'head': hash(a.head)})
+            dataList.append(
+                {'Type': 'arc', 'label': labelDumpFunc(a.label), 'tail': hash(a.tail), 'head': hash(a.head)})
         outf = open(fname, 'w')
         dump(dataList, outf)
         outf.close()
@@ -372,9 +371,9 @@ class MDD(object):
                     print("node canot be splitted, beacause reaching the bound!:", len(self.nodes[j]))
                     continue
                 # node split
-                new_nodes1 = MDDNode(layer=j, state="u"+str(node_idx))
+                new_nodes1 = MDDNode(layer=j, state="u" + str(node_idx))
                 new_nodes1_income = set()
-                new_nodes2 = MDDNode(layer=j, state="u"+str(node_idx+1))
+                new_nodes2 = MDDNode(layer=j, state="u" + str(node_idx + 1))
                 new_nodes2_income = set()
 
                 self.add_node(new_nodes1)
@@ -389,7 +388,8 @@ class MDD(object):
                         newarc = MDDArc(a.label, a.tail, new_nodes2)
                         self.add_arc(newarc)
                         new_nodes2_income.add(a.label)
-                print("split the incoming edges:", len(self.nodes[j][v].incoming), len(self.nodes[j][new_nodes1].incoming), len(self.nodes[j][new_nodes2].incoming))
+                print("split the incoming edges:", len(self.nodes[j][v].incoming),
+                      len(self.nodes[j][new_nodes1].incoming), len(self.nodes[j][new_nodes2].incoming))
                 # arc filtering
                 for x in self.nodes[j][v].outgoing:
                     if not x.label in new_nodes1_income:
@@ -430,17 +430,17 @@ class MDD(object):
                 # rand_bits = np.random.randn(length)
                 # while np.count_nonzero(rand_bits>0.5) == 0 or np.count_nonzero(rand_bits<=0.5) == 0:
                 #     rand_bits = np.random.randint(2, size=length)
-                    # print("one of splitted has no income edge:{} {}".format(np.count_nonzero(rand_bits),
-                    #                                                         np.count_nonzero(rand_bits == 0)))
-                    # continue
+                # print("one of splitted has no income edge:{} {}".format(np.count_nonzero(rand_bits),
+                #                                                         np.count_nonzero(rand_bits == 0)))
+                # continue
                 # print("rand_bits:", len(rand_bits))
 
                 """
                 node splitting
                 split the incoming arcs by half, and copy the outgoing arcs
                 """
-                new_nodes1 = MDDNode(layer=j, state="u"+str(node_idx))
-                new_nodes2 = MDDNode(layer=j, state="u"+str(node_idx+1))
+                new_nodes1 = MDDNode(layer=j, state="u" + str(node_idx))
+                new_nodes2 = MDDNode(layer=j, state="u" + str(node_idx + 1))
                 self.add_node(new_nodes1)
                 self.add_node(new_nodes2)
                 node_idx += 2
@@ -463,12 +463,13 @@ class MDD(object):
                 filter the arc if there is only one incoming arc of the node
                 """
                 print("split the incoming edges: {} -> ({}, {})".format(len(self.nodes[j][v].incoming),
-                      len(self.nodes[j][new_nodes1].incoming), len(self.nodes[j][new_nodes2].incoming)))
+                                                                        len(self.nodes[j][new_nodes1].incoming),
+                                                                        len(self.nodes[j][new_nodes2].incoming)))
                 self.remove_node(v)
-                if  len(self.nodes[j][new_nodes1].incoming) == 1:
-                    visited_locations = self.extract_single_income_labels(j,new_nodes1)
+                if len(self.nodes[j][new_nodes1].incoming) == 1:
+                    visited_locations = self.extract_single_income_labels(j, new_nodes1)
                     self.recurse_arc_filtering(j, new_nodes1, visited_locations)
-                if  len(self.nodes[j][new_nodes2].incoming) == 1:
+                if len(self.nodes[j][new_nodes2].incoming) == 1:
                     visited_locations = self.extract_single_income_labels(j, new_nodes2)
                     self.recurse_arc_filtering(j, new_nodes2, visited_locations)
 
@@ -476,15 +477,14 @@ class MDD(object):
             if len(self.allnodes_in_layer(j)) > maxWidth or do_splitted == False:
                 j += 1
 
-    def extract_single_income_labels(self,layer_idx, pivot_node):
+    def extract_single_income_labels(self, layer_idx, pivot_node):
         single_income_labels = set()
-        while layer_idx >0:
+        while layer_idx > 0:
             the_arc = list(self.nodes[layer_idx][pivot_node].incoming)[0]
             single_income_labels.add(the_arc.label)
-            pivot_node= the_arc.tail
-            layer_idx -=1
+            pivot_node = the_arc.tail
+            layer_idx -= 1
         return single_income_labels
-
 
     def recurse_arc_filtering(self, layer_idx, node_idx, to_be_removed_node_label):
         out_arcs = [x for x in self.nodes[layer_idx][node_idx].outgoing]
@@ -498,10 +498,9 @@ class MDD(object):
         for x in out_arcs:
             if x.label in to_be_removed_node_label:
                 if x.head != list(self.nodes[self.numArcLayers - 1].keys())[0]:
-                    self.recurse_arc_filtering(layer_idx+1, x.head, to_be_removed_node_label)
+                    self.recurse_arc_filtering(layer_idx + 1, x.head, to_be_removed_node_label)
                 print("remove arc:", x)
                 self.remove_arc(x)
-
 
     def loadJSON(self, json_content):
         """Load an MDD from a JSON file."""

@@ -5,9 +5,10 @@ import pickle
 import argparse
 import sys
 
+from tqdm import tqdm
+
 from generative_adversarial_network import discriminator, generator
 import data_utils
-
 from mdd.crisp import CRISP
 np.printoptions(precision=3, suppress=True)
 
@@ -63,41 +64,41 @@ def train(data_file, prob, batch_size, max_width, testing_set_size, d_n_hidden, 
     data_gen = data_utils.ScheduleDataGen(data_file, prob.max_stops, prob.num_locs)
     crisp = CRISP(prob.num_locs, prob.max_stops, max_width)
     # Device configuration
-    # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     # generators
     gnt = generator(hidden_dim=g_n_hidden, z_dim=g_n_input + prob.num_locs, val_dim=prob.num_locs,
-                    n_vars=prob.max_stops + 1)#.to(device)
-
+                    n_vars=prob.max_stops + 1).to(device)
 
     # discriminators
-    dmt = discriminator(hidden_dim=d_n_hidden, val_dim=prob.num_locs)#.to(device)
+    dmt = discriminator(hidden_dim=d_n_hidden, val_dim=prob.num_locs).to(device)
 
     d_label_1 = torch.ones(batch_size)
     d_label_0 = torch.zeros(batch_size)
-    d_label = torch.cat((d_label_1, d_label_0), 0)
+    d_label = torch.cat((d_label_1, d_label_0), 0).cuda()
 
     d_optim = torch.optim.Adam(dmt.parameters(), lr=lr)
     g_optim = torch.optim.Adam(gnt.parameters(), lr=g_lr)
 
     for epoch in range(1, 50):
         print("[ {} iterations]".format(epoch))
-        for it in range(100):
+        for it in tqdm(range(100)):
+
             vars_real, visit, real_paths, daily_requests = data_gen.next_data(batch_size)
-            vars_real = torch.Tensor(vars_real).float()
+            if use_crisp:
+                out_mask = crisp.generate_mask_with_ground_truth(real_paths, daily_requests)
+            vars_real = torch.Tensor(vars_real).float().cuda()
             visit_z0 = torch.Tensor(visit).float()
 
             visit_z = visit_z0.repeat(prob.max_stops + 1, 1, 1)
             # the random variable z
             z = torch.randn([prob.max_stops + 1, batch_size, g_n_input])
-            z = torch.cat((visit_z, z), 2)
+            z = torch.cat((visit_z, z), 2).cuda()
 
             out = gnt(z)
             vars_predict = F.softmax(out, dim=2)
             if use_crisp:
-                out_mask = crisp.generate_mask_with_ground_truth(real_paths, daily_requests)
-                out_mask = torch.from_numpy(out_mask)
+                out_mask = torch.from_numpy(out_mask).cuda()
                 # mask
                 vars_predict = torch.mul(vars_predict, out_mask)
                 # renormalize

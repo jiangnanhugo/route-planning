@@ -5,7 +5,7 @@ from mdd.utils import get_mdd
 
 
 class CRISP(object):
-    def __init__(self, n_locations,max_stops, maxwidth):
+    def __init__(self, n_locations, max_stops, maxwidth):
         self.maxwidth = maxwidth
         self.n_locations = n_locations
         self.max_stops = max_stops
@@ -23,14 +23,21 @@ class CRISP(object):
         # [6, batch_size, 29]
         out_mask_all = np.zeros((self.max_stops + 1, n_batch, self.n_locations), dtype=np.float32)
         for i in range(n_batch):
-            filtered_mdd = self.mdd_filtering(self.mdd, daily_requests[i])
-            # print("Input path", real_paths[:,i])
-            neighbor_along_path = filtered_mdd.find_neighbor_along_path(real_paths[:,i])
-            # print("Output Mask", neighbor_along_path)
-            # print(self.idx_to_binary(neighbor_along_path))
-            out_mask_all[:, i, :] = self.idx_to_binary(neighbor_along_path)
+            # filtered_mdd = self.mdd_filtering(self.mdd, daily_requests[i])
+            neighbor_along_path = self.mdd.find_neighbor_along_path(real_paths[:, i])
+            new_neighbor_along_path = self.fast_mdd_filtering(neighbor_along_path, daily_requests[i])
+            out_mask_all[:, i, :] = self.idx_to_binary(new_neighbor_along_path)
 
         return out_mask_all
+
+    def fast_mdd_filtering(self, neighbor_along_path, daily_request):
+        new_neighbor_along_path = []
+        for i, layer in enumerate(neighbor_along_path):
+            new_layer = [x for x in layer if x in daily_request]
+            new_neighbor_along_path.append(new_layer)
+        return new_neighbor_along_path
+
+
 
     # MDD Filtering to Process Daily Requests
     def mdd_filtering(self, MDD, daily_request):
@@ -54,10 +61,10 @@ class CRISP(object):
         return filtered_mdd
 
     def idx_to_binary(self, neighbor_along_paths):
-        mask = np.zeros(shape=(self.max_stops+1,self.n_locations), dtype=np.float)
-        for i,layer in enumerate(neighbor_along_paths):
+        mask = np.zeros(shape=(self.max_stops + 1, self.n_locations), dtype=np.float)
+        for i, layer in enumerate(neighbor_along_paths):
             for x in layer:
-                mask[i,x]=1.0
+                mask[i, x] = 1.0
         return mask
 
     def valid_routes(self, oups, daily_requests):
@@ -93,7 +100,7 @@ class CRISP(object):
 
                 out_mask = self.idx_to_binary(neighbor_along_path)
 
-                current_out = np.multiply(seq_out[i,nb,:], out_mask[i,:])
+                current_out = np.multiply(seq_out[i, nb, :], out_mask[i, :])
                 normalized_vars_predict = current_out / np.sum(current_out, keepdims=True)
                 normalized_vars_predict[np.isnan(normalized_vars_predict)] = 0.0
 
@@ -102,7 +109,6 @@ class CRISP(object):
                 generated_route.append(sampled_loc)
             generated_routes.append(generated_route)
         return generated_routes
-
 
     @staticmethod
     def generate_route_without_crisp(self, seq_out, visit):
@@ -121,7 +127,7 @@ class CRISP(object):
             generated_routes.append(sampled_loc)
         return generated_routes
 
-    def random_sample_with_majority_voting(self,probs, num_of_tryouts=100):
+    def random_sample_with_majority_voting(self, probs, num_of_tryouts=100):
         probs = probs.flatten()
         ranges = self.convert_prob_to_range(probs)
         random_zs = np.random.random(num_of_tryouts)
@@ -140,18 +146,14 @@ class CRISP(object):
             sumed += p
             histgram.append(sumed)
         ranges = []
-        for i in range(len(histgram)-1):
-            ranges.append((histgram[i], histgram[i+1]))
+        for i in range(len(histgram) - 1):
+            ranges.append((histgram[i], histgram[i + 1]))
         return ranges
 
-    def get_location_from_prob_range(self,ranges, z):
+    def get_location_from_prob_range(self, ranges, z):
         for i, (left, right) in enumerate(ranges):
             if left == right:
                 continue
             if left <= z < right:
                 return i
         return 0
-
-
-
-

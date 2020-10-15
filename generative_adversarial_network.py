@@ -19,10 +19,9 @@ class generator(nn.Module):
         assert k == self.n_vars
         assert input_dim == self.z_dim
 
-        output = torch.zeros((0, batchnum, self.val_dim), dtype=torch.float)
-
-        h = torch.zeros(batchnum, self.hidden_dim)
-        c = torch.zeros(batchnum, self.hidden_dim)
+        h = torch.zeros(batchnum, self.hidden_dim).cuda()
+        c = torch.zeros(batchnum, self.hidden_dim).cuda()
+        output = torch.zeros((0, batchnum, self.val_dim), dtype=torch.float).cuda()
 
         for i in range(self.n_vars):
             h, c = self.lstm(input[i], (h, c))
@@ -45,7 +44,7 @@ class discriminator(nn.Module):
     def forward(self, inp):
         n_vars, n_batch, n_val = inp.size()
         assert n_val == self.val_dim
-        h0 = torch.unsqueeze(self.h0.repeat((n_batch, 1)), 0)
+        h0 = torch.unsqueeze(self.h0.repeat((n_batch, 1)), 0).cuda()
 
         rnn_oup, rnn_hn = self.rnn(inp, h0)
 
