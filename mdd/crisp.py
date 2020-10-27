@@ -27,7 +27,6 @@ class CRISP(object):
             neighbor_along_path = self.mdd.find_neighbor_along_path(real_paths[:, i])
             new_neighbor_along_path = self.fast_mdd_filtering(neighbor_along_path, daily_requests[i])
             out_mask_all[:, i, :] = self.idx_to_binary(new_neighbor_along_path)
-
         return out_mask_all
 
     def fast_mdd_filtering(self, neighbor_along_path, daily_request):
@@ -36,8 +35,6 @@ class CRISP(object):
             new_layer = [x for x in layer if x in daily_request]
             new_neighbor_along_path.append(new_layer)
         return new_neighbor_along_path
-
-
 
     # MDD Filtering to Process Daily Requests
     def mdd_filtering(self, MDD, daily_request):

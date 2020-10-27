@@ -5,7 +5,6 @@ import pickle
 import argparse
 import sys
 
-from tqdm import tqdm
 
 from generative_adversarial_network import discriminator, generator
 import data_utils
@@ -23,13 +22,13 @@ def test(data_gen, batch_size, testing_set_size, g_n_input, crisp, use_crisp, us
         visit_z0 = torch.Tensor(visit).float()
         visit_z = visit_z0.repeat(prob.max_stops + 1, 1, 1)
         z = torch.randn([prob.max_stops + 1, batch_size, g_n_input])
-        z = torch.cat((visit_z, z), 2)
+        z = torch.cat((visit_z, z), 2).cuda()
         out = gnt(z)
         vars_predict = F.softmax(out, dim=2)
         if use_crisp:
-            predicted_route = crisp.generate_route_for_inference(vars_predict.detach().numpy(), daily_requests)
+            predicted_route = crisp.generate_route_for_inference(vars_predict.detach().cpu().numpy(), daily_requests)
         else:
-            predicted_route = data_utils.score_to_routes(vars_predict.detach().numpy().squeeze(),
+            predicted_route = data_utils.score_to_routes(vars_predict.detach().cpu().numpy().squeeze(),
                                                          real_paths.transpose()[0],
                                                          use_post_process_type2)
             if use_post_process_type1:
@@ -51,7 +50,7 @@ def test(data_gen, batch_size, testing_set_size, g_n_input, crisp, use_crisp, us
         real_routes.append(list(real_route.squeeze()))
         predicted_routes.append(predicted_route)
 
-    print('real={}'.format(real_routes[0]))
+    print('real={}'.format([x.tolist() for x in real_routes[0]]))
     print('gen={}'.format(predicted_routes[0]))
     print('valid routes={}'.format(sum(num_valid_routes) /(testing_set_size * batch_size)))
     print('norm-reward={}'.format(sum(norm_reward) /(len(norm_reward)+0.0001)))
@@ -82,7 +81,7 @@ def train(data_file, prob, batch_size, max_width, testing_set_size, d_n_hidden, 
 
     for epoch in range(1, 50):
         print("[ {} iterations]".format(epoch))
-        for it in tqdm(range(100)):
+        for it in range(100):
 
             vars_real, visit, real_paths, daily_requests = data_gen.next_data(batch_size)
             if use_crisp:
@@ -116,7 +115,7 @@ def train(data_file, prob, batch_size, max_width, testing_set_size, d_n_hidden, 
             d_loss.backward()
             d_optim.step()
 
-            d_output_predict = dmt(vars_predict)
+            d_output_predict = dmt(norm_vars_predict.detach())
             g_loss = -torch.mean(torch.log(d_output_predict + 1e-10))
             g_optim.zero_grad()
             g_loss.backward()
@@ -124,6 +123,7 @@ def train(data_file, prob, batch_size, max_width, testing_set_size, d_n_hidden, 
         # used for testing
         test(data_gen,batch_size, testing_set_size, g_n_input, crisp, use_crisp,
              use_post_process_type1, use_post_process_type2, gnt)
+        sys.stdout.flush()
 
 
 def str2bool(v):
