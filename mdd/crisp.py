@@ -6,6 +6,12 @@ from mdd.utils import get_mdd
 
 class CRISP(object):
     def __init__(self, n_locations, max_stops, maxwidth):
+        """
+        initializaiton of the CRISP layer
+        :param n_locations: number of locations
+        :param max_stops:
+        :param maxwidth: maximum width of the MDD layer.
+        """
         self.maxwidth = maxwidth
         self.n_locations = n_locations
         self.max_stops = max_stops
@@ -13,8 +19,7 @@ class CRISP(object):
 
     def generate_mask_with_ground_truth(self, real_paths, daily_requests):
         """
-        in training, convert the mdd into mask vector
-        :param mdd:
+        During training, convert the mdd into mask vector.
         :param real_paths:  the trajectory
         :param daily_requests: the set of locations in array form. X_i=1 mean the location is in the daily request
         :return:

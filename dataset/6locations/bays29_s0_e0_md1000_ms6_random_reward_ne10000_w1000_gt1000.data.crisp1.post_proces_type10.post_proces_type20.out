@@ -1,0 +1,102 @@
+read problem
+relax the mdd: 10
+1 -th layer is larger than the maximum width
+1 -th layer is larger than the maximum width
+1 -th layer is larger than the maximum width
+1 -th layer is larger than the maximum width
+1 -th layer is larger than the maximum width
+1 -th layer is larger than the maximum width
+1 -th layer is larger than the maximum width
+1 -th layer is larger than the maximum width
+1 -th layer is larger than the maximum width
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0e48>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0b70>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0ac8>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0b00>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0a20>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0a58>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0978>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada09b0>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0898>
+2 -th layer is larger than the maximum width
+2 -th layer is larger than the maximum width
+2 -th layer is larger than the maximum width
+2 -th layer is larger than the maximum width
+2 -th layer is larger than the maximum width
+2 -th layer is larger than the maximum width
+2 -th layer is larger than the maximum width
+2 -th layer is larger than the maximum width
+2 -th layer is larger than the maximum width
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0e10>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada07b8>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada07f0>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada06d8>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0710>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0630>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0668>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0588>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada05c0>
+3 -th layer is larger than the maximum width
+3 -th layer is larger than the maximum width
+3 -th layer is larger than the maximum width
+3 -th layer is larger than the maximum width
+3 -th layer is larger than the maximum width
+3 -th layer is larger than the maximum width
+3 -th layer is larger than the maximum width
+3 -th layer is larger than the maximum width
+3 -th layer is larger than the maximum width
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0d30>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0518>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0438>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0470>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0390>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada03c8>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0fd0>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0f98>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80048>
+4 -th layer is larger than the maximum width
+4 -th layer is larger than the maximum width
+4 -th layer is larger than the maximum width
+4 -th layer is larger than the maximum width
+4 -th layer is larger than the maximum width
+4 -th layer is larger than the maximum width
+4 -th layer is larger than the maximum width
+4 -th layer is larger than the maximum width
+4 -th layer is larger than the maximum width
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0ef0>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac800b8>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac800f0>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80128>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80160>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80198>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac801d0>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80208>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80240>
+5 -th layer is larger than the maximum width
+5 -th layer is larger than the maximum width
+5 -th layer is larger than the maximum width
+5 -th layer is larger than the maximum width
+5 -th layer is larger than the maximum width
+5 -th layer is larger than the maximum width
+5 -th layer is larger than the maximum width
+5 -th layer is larger than the maximum width
+5 -th layer is larger than the maximum width
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ada0ba8>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac802b0>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac802e8>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80320>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80358>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80390>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac803c8>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80400>
+delete pre_node=<mdd.MDDNode object at 0x7f7e6ac80438>
+6 -th layer is larger than the maximum width
+6 -th layer is larger than the maximum width
+6 -th layer is larger than the maximum width
+6 -th layer is larger than the maximum width
+6 -th layer is larger than the maximum width
+6 -th layer is larger than the maximum width
+6 -th layer is larger than the maximum width
+6 -th layer is larger than the maximum width
+6 -th layer is larger than the maximum width
+[ 1 iterations]

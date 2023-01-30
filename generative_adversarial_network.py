@@ -1,9 +1,21 @@
+"""
+This file implements the Generative adversarial network that contains:
+ - generator.
+ - discriminator.
+"""
+
 import torch
 import torch.nn as nn
 
-
 class generator(nn.Module):
     def __init__(self, hidden_dim, z_dim, val_dim, n_vars):
+        """
+
+        :param hidden_dim: hidden layer dimension
+        :param z_dim:
+        :param val_dim:
+        :param n_vars:
+        """
         super(generator, self).__init__()
         self.lstm = nn.LSTMCell(input_size=z_dim, hidden_size=hidden_dim)
         self.lin = nn.Linear(hidden_dim, val_dim)

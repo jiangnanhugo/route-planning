@@ -1,3 +1,6 @@
+"""
+this file is used to generate synthetic schedules from the TSP dataset
+"""
 import random, copy, pickle, argparse
 from itertools import product
 import numpy as np
@@ -13,9 +16,9 @@ def random_sample_loc_set(mdd, root, visited, rewards):
         node = mdd.mdd[root]
         n_choices = len(node.incoming)
 
-        choice = random.randint(0, n_choices-1)
+        choice = random.randint(0, n_choices - 1)
         while node.incoming[choice] in visited:
-            choice = random.randint(0, n_choices-1)
+            choice = random.randint(0, n_choices - 1)
 
         loc_set, cur_reward = random_sample_loc_set(mdd, node.outgoing[choice], (visited | set([node.incoming[choice]])), rewards)
 
@@ -35,11 +38,10 @@ def dfs_best_loc_visitings(mdd, root, visit, idx, to_visit, rewards, cur_reward)
         for i, ai in enumerate(node.incoming):
             ni = node.outgoing[i]
             if (ai in to_visit) and \
-               (mdd.mdd[ni].some_up | {ai}).issuperset(to_visit) and \
-               (not ai in visit[:idx]):
-
+                    (mdd.mdd[ni].some_up | {ai}).issuperset(to_visit) and \
+                    (not ai in visit[:idx]):
                 visit[idx] = ai
-                dfs_best_loc_visitings(mdd, ni, visit, idx+1, \
+                dfs_best_loc_visitings(mdd, ni, visit, idx + 1, \
                                        to_visit - {ai}, \
                                        rewards,
                                        cur_reward + rewards[idx][ai])
@@ -51,27 +53,27 @@ def dfs_best_loc_visitings_v2(mdd, root, visit, idx, to_visit, rewards, cur_rewa
     if root == 0:
         # if cur_dist > max_duration:
         #     continue
-        #print('here')
+        # print('here')
         if cur_dist <= max_duration and cur_reward > best_rewards:
             for i in range(idx):
                 best_visits[i] = visit[i]
             best_rewards = cur_reward
     else:
-        #print('to_visit', to_visit)
+        # print('to_visit', to_visit)
         node = mdd.mdd[root]
         for i, ai in enumerate(node.incoming):
             ni = node.outgoing[i]
             if (ai in to_visit) and \
-               (mdd.mdd[ni].some_up | set([ai])).issuperset(to_visit) and \
-               (not ai in visit[:idx]):
+                    (mdd.mdd[ni].some_up | set([ai])).issuperset(to_visit) and \
+                    (not ai in visit[:idx]):
 
                 if idx == 0:
                     cur_loc = startp
                 else:
-                    cur_loc = visit[idx-1]
+                    cur_loc = visit[idx - 1]
 
                 visit[idx] = ai
-                dfs_best_loc_visitings_v2(mdd, ni, visit, idx+1,
+                dfs_best_loc_visitings_v2(mdd, ni, visit, idx + 1,
                                           to_visit - {ai},
                                           rewards,
                                           cur_reward + rewards[idx][ai],
@@ -95,21 +97,22 @@ def bfs_best_loc_greedy_visitings(mdd, to_visit0, rewards, greedy_trial, paired_
             for i, ai in enumerate(node.incoming):
                 ni = node.outgoing[i]
                 if (ai in to_visit) and \
-                   (mdd.mdd[ni].some_up | set([ai])).issuperset(to_visit) and \
-                   (not ai in visit[:idx]) and\
-                   (cur_dist + paired_dist[cur_loc][ai] <= max_duration):
-                    if idx < len(to_visit0) -1 and ni == 0:
+                        (mdd.mdd[ni].some_up | set([ai])).issuperset(to_visit) and \
+                        (not ai in visit[:idx]) and \
+                        (cur_dist + paired_dist[cur_loc][ai] <= max_duration):
+                    if idx < len(to_visit0) - 1 and ni == 0:
                         continue
-                    next_node = [mdd.mdd[ni], ai, to_visit - set([ai]), visit + [ai], cur_reward + rewards[idx][ai], cur_dist + paired_dist[cur_loc][ai]]
+                    next_node = [mdd.mdd[ni], ai, to_visit - set([ai]), visit + [ai], cur_reward + rewards[idx][ai],
+                                 cur_dist + paired_dist[cur_loc][ai]]
                     next_layer.append(next_node)
 
         if len(next_layer) > greedy_trial:
-            next_layer.sort(key=lambda node : node[3], reverse=True)
+            next_layer.sort(key=lambda node: node[3], reverse=True)
             next_layer = next_layer[:greedy_trial]
 
         this_layer = next_layer
 
-    this_layer.sort(key=lambda node : node[4], reverse=True)
+    this_layer.sort(key=lambda node: node[4], reverse=True)
 
     if len(this_layer) == 0:
         return [], -1000.0
@@ -129,6 +132,7 @@ def floyd_warshall(paired_dist):
             path[i][j] = path_ik_to_kj
     return path
 
+
 ##### Main Program #####
 
 # pair_dist
@@ -143,7 +147,6 @@ def floyd_warshall(paired_dist):
 # output_file
 
 def main(tsp_file):
-
     pairwise_dist = read_tsp_file_full_matrix(tsp_file)
 
     parser = argparse.ArgumentParser(description="gen dataset.")
@@ -160,22 +163,20 @@ def main(tsp_file):
     max_stops = int(args.max_stops)
     max_width = 1000
 
-
-    output_prob_instance = "dataset/"+str(max_stops)+"locations/bays29_s0_e0_md1000_ms"+str(max_stops)+"_random_reward.prob"
+    output_prob_instance = "dataset/" + str(max_stops) + "locations/bays29_s0_e0_md1000_ms" + str(max_stops) + "_random_reward.prob"
 
     num_examples = 10000
     greedy_trial = 1000
-    output_file = "dataset/"+str(max_stops)+"locations/bays29_s0_e0_md1000_ms"+str(max_stops)+"_random_reward_ne10000_w1000_gt1000.data"
+    output_file = "dataset/" + str(max_stops) + "locations/bays29_s0_e0_md1000_ms" + str(max_stops) + "_random_reward_ne10000_w1000_gt1000.data"
 
     # reward
     num_locs = len(paired_shortest_path)
     print("paired_shortest_path={}".format(num_locs))
 
-
     def gen_random_rewards(max_stops, num_locs):
         return np.random.rand(max_stops, num_locs)
-    rewards = gen_random_rewards(max_stops + 1, num_locs)
 
+    rewards = gen_random_rewards(max_stops + 1, num_locs)
 
     prob = data_utils.ScheduleProb()
     prob.init_by_assign(paired_shortest_path, startp, endp, max_duration, max_stops, rewards)
@@ -185,13 +186,7 @@ def main(tsp_file):
 
     mdd = mdd_backup.MDD_TSP(paired_shortest_path, startp, endp, max_duration, max_stops, max_width)
 
-    # mdd.filter_refine_preparation()
-
-    # mdd.print_mdd(sys.stdout)
-    # mdd.relax_mdd()
-
     print('===== after filter and refining =====')
-    #mdd.print_mdd(sys.stdout)
 
     #
     print("maximum stops", max_stops)
@@ -226,4 +221,3 @@ if __name__ == "__main__":
     #### TSPLIB bays29.tsp
     tsp_file = "dataset/raw_data/TSPLIB95/bays29.tsp"
     main(tsp_file)
-
